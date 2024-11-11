@@ -14,13 +14,12 @@ from typing import Any, Final
 import voluptuous as vol
 
 from homeassistant.components import conversation, stt, tts, websocket_api
-from homeassistant.const import ATTR_DEVICE_ID, ATTR_SECONDS, MATCH_ALL
+from homeassistant.const import ATTR_DEVICE_ID, ATTR_SECONDS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.util import language as language_util
 
 from .const import (
-    DEFAULT_PIPELINE_TIMEOUT,
     DEFAULT_WAKE_WORD_TIMEOUT,
     DOMAIN,
     EVENT_RECORDING,
@@ -32,6 +31,7 @@ from .error import PipelineNotFound
 from .pipeline import (
     AudioSettings,
     DeviceAudioQueue,
+    Pipeline,
     PipelineData,
     PipelineError,
     PipelineEvent,
@@ -129,6 +129,14 @@ async def websocket_run(
     """Run a pipeline."""
     pipeline_id = msg.get("pipeline")
     
+    if not pipeline_id:
+        connection.send_error(
+            msg["id"],
+            "pipeline required",
+            "A valid pipline ID is required."
+        )
+        return
+
     pipeline = await get_pipeline_or_error(hass, connection, msg, pipeline_id)
     if not pipeline:
         return
@@ -144,7 +152,10 @@ async def websocket_run(
 
 
 async def get_pipeline_or_error(
-    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any], pipeline_id: str
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection, 
+    msg: dict[str, Any], 
+    pipeline_id: str
 ) -> Pipeline | None:
     """Get the pipeline or send error if not found."""
     try:
@@ -177,7 +188,7 @@ async def setup_audio_pipeline(
 ) -> None:
     """Set up the audio pipeline for wake word or STT stages."""
     msg_input = msg["input"]
-    audio_queue = asyncio.Queue()
+    audio_queue: asyncio.Queue = asyncio.Queue()
     wake_word_phrase, _ = get_wake_word_settings(msg_input, msg["start_stage"])
 
     input_args.update(
@@ -220,7 +231,12 @@ async def create_stt_stream(
     while chunk := await audio_queue.get():
         if incoming_sample_rate != SAMPLE_RATE:
             chunk, state = audioop.ratecv(
-                chunk, SAMPLE_WIDTH, SAMPLE_CHANNELS, incoming_sample_rate, SAMPLE_RATE, state
+                chunk, 
+                SAMPLE_WIDTH, 
+                SAMPLE_CHANNELS, 
+                incoming_sample_rate, 
+                SAMPLE_RATE, 
+                state
             )
         yield chunk
 
@@ -287,7 +303,9 @@ async def execute_pipeline_run(
 
 
 async def validate_pipeline(
-    connection: websocket_api.ActiveConnection, msg: dict[str, Any], pipeline_input: PipelineInput
+    connection: websocket_api.ActiveConnection, 
+    msg: dict[str, Any], 
+    pipeline_input: PipelineInput
 ) -> bool:
     """Validate the pipeline input and send errors if needed."""
     try:
@@ -428,6 +446,15 @@ def websocket_get_run(
         {"events": pipeline_debug[pipeline_run_id].events},
     )
 
+def _handle_languages(
+    language_tags: set[str], pipeline_languages: set[str] | None
+) -> set[str] | None:
+    if language_tags:
+        languages = {language_util.Dialect.parse(tag).language for tag in language_tags}
+        if pipeline_languages is not None:
+            return language_util.intersect(pipeline_languages, languages)
+        return languages
+    return pipeline_languages
 
 @websocket_api.websocket_command(
     {
@@ -449,27 +476,15 @@ def websocket_list_languages(
     tts_language_tags = tts.async_get_text_to_speech_languages(hass)
 
     # Process and intersect languages
-    pipeline_languages = handle_languages(conv_language_tags, None)
-    pipeline_languages = handle_languages(stt_language_tags, pipeline_languages)
-    pipeline_languages = handle_languages(tts_language_tags, pipeline_languages)
+    pipeline_languages = _handle_languages(conv_language_tags, None)
+    pipeline_languages = _handle_languages(stt_language_tags, pipeline_languages)
+    pipeline_languages = _handle_languages(tts_language_tags, pipeline_languages)
 
     # Send the result
     connection.send_result(
         msg["id"],
-        {
-            "languages": sorted(pipeline_languages) if pipeline_languages else None
-        },
+        {"languages": sorted(pipeline_languages) if pipeline_languages else None},
     )
-
-
-def handle_languages(language_tags: set[str], pipeline_languages: set[str] | None) -> set[str] | None:
-    
-    if language_tags:
-        languages = {language_util.Dialect.parse(tag).language for tag in language_tags}
-        if pipeline_languages is not None:
-            return language_util.intersect(pipeline_languages, languages)
-        return languages
-    return pipeline_languages
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(

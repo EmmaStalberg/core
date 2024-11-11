@@ -125,10 +125,10 @@ class VoiceCommandSegmenter:
         self.in_command = False
 
     def process(self, chunk_seconds: float, is_speech: bool | None) -> bool:
-     """Process samples using external VAD. Returns False when command is done."""
+        """Process samples using external VAD. Returns False when command is done."""
 
         if self.timed_out:
-                self.timed_out = False
+            self.timed_out = False
 
         self._timeout_seconds_left -= chunk_seconds
 
@@ -146,11 +146,12 @@ class VoiceCommandSegmenter:
 
         return self._process_in_command(chunk_seconds, is_speech)
 
-    def _process_not_in_command(self, chunk_seconds: float, is_speech: bool | None) -> bool:
+    def _process_not_in_command(
+        self, chunk_seconds: float, is_speech: bool | None
+    ) -> bool:
         if is_speech:
             return self._handle_speech(chunk_seconds)
-        else:
-            return self._handle_silence(chunk_seconds)
+        return self._handle_silence(chunk_seconds)
 
     def _handle_speech(self, chunk_seconds: float) -> bool:
         self._reset_seconds_left = self.reset_seconds
@@ -158,9 +159,7 @@ class VoiceCommandSegmenter:
 
         if self._speech_seconds_left <= 0:
             self.in_command = True
-            self._command_seconds_left = (
-                self.command_seconds - self.speech_seconds
-            )
+            self._command_seconds_left = self.command_seconds - self.speech_seconds
             self._silence_seconds_left = self.silence_seconds
             _LOGGER.debug("Voice command started")
             return True
@@ -203,7 +202,6 @@ class VoiceCommandSegmenter:
             self._reset_seconds_left = self.reset_seconds
 
         return True  # Command still ongoing
-
 
     def process_with_vad(
         self,
