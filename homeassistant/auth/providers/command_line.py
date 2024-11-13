@@ -63,9 +63,7 @@ class CommandLineAuthProvider(AuthProvider):
         """Return a flow to login."""
         return CommandLineLoginFlow(self)
 
-    async def async_validate_login(self, username: str, password: str) -> None:
-        """Validate a username and password."""
-        env = {"username": username, "password": password}
+    async def _run_subprocess(self, env: dict) -> asyncio.subprocess.Process:
         try:
             process = await asyncio.create_subprocess_exec(
                 self.config[CONF_COMMAND],
@@ -74,11 +72,33 @@ class CommandLineAuthProvider(AuthProvider):
                 stdout=asyncio.subprocess.PIPE if self.config[CONF_META] else None,
                 close_fds=False,  # required for posix_spawn
             )
-            stdout, _ = await process.communicate()
+            return process
         except OSError as err:
             # happens when command doesn't exist or permission is denied
-            _LOGGER.error("Error while authenticating %r: %s", username, err)
+            _LOGGER.error("Error while authenticating %r: %s", env['username'], err)
             raise InvalidAuthError from err
+
+    async def _process_meta(self, username: str, stdout: bytes) -> asyncio.subprocess.Process:
+        meta: dict[str, str] = {}
+        for _line in stdout.splitlines():
+            try:
+                line = _line.decode().lstrip()
+            except ValueError:
+                # malformed line
+                continue
+            if line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip()
+            if key in self.ALLOWED_META_KEYS:
+                meta[key] = value
+        self._user_meta[username] = meta
+
+    async def async_validate_login(self, username: str, password: str) -> None:
+        """Validate a username and password."""
+        env = {"username": username, "password": password}
+        process = await self._run_subprocess(self, env)
 
         if process.returncode != 0:
             _LOGGER.error(
@@ -89,21 +109,8 @@ class CommandLineAuthProvider(AuthProvider):
             raise InvalidAuthError
 
         if self.config[CONF_META]:
-            meta: dict[str, str] = {}
-            for _line in stdout.splitlines():
-                try:
-                    line = _line.decode().lstrip()
-                except ValueError:
-                    # malformed line
-                    continue
-                if line.startswith("#") or "=" not in line:
-                    continue
-                key, _, value = line.partition("=")
-                key = key.strip()
-                value = value.strip()
-                if key in self.ALLOWED_META_KEYS:
-                    meta[key] = value
-            self._user_meta[username] = meta
+            stdout, _ = await process.communicate()
+            self._process_meta(self, username, stdout)
 
     async def async_get_or_create_credentials(
         self, flow_result: Mapping[str, str]
