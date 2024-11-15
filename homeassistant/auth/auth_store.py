@@ -299,110 +299,110 @@ class AuthStore:
                                         groups: dict[str, models.Group]) -> tuple[dict[str, models.Group], bool, bool, bool, Optional[str]]:
 
         async def async_load(self) -> None:
-        """Load the users."""
-        if self._loaded:
-            raise RuntimeError("Auth storage is already loaded")
-        self._loaded = True
-
-        dev_reg = dr.async_get(self.hass)
-        ent_reg = er.async_get(self.hass)
-        data = await self._store.async_load()
-
-        perm_lookup = PermissionLookup(ent_reg, dev_reg)
-        self._perm_lookup = perm_lookup
-
-        if data is None or not isinstance(data, dict):
-            self._set_defaults()
-            return
-
-        users: dict[str, models.User] = {}
-        groups: dict[str, models.Group] = {}
-        credentials: dict[str, models.Credentials] = {}
-
-        groups, has_admin_group, has_user_group, has_read_only_group, group_without_policy = self.create_objects_explicitly(data, groups)
-
-        if groups and group_without_policy is not None:
+            """Load the users."""
+            if self._loaded:
+                raise RuntimeError("Auth storage is already loaded")
+            self._loaded = True
+    
+            dev_reg = dr.async_get(self.hass)
+            ent_reg = er.async_get(self.hass)
+            data = await self._store.async_load()
+    
+            perm_lookup = PermissionLookup(ent_reg, dev_reg)
+            self._perm_lookup = perm_lookup
+    
+            if data is None or not isinstance(data, dict):
+                self._set_defaults()
+                return
+    
+            users: dict[str, models.User] = {}
+            groups: dict[str, models.Group] = {}
+            credentials: dict[str, models.Credentials] = {}
+    
+            groups, has_admin_group, has_user_group, has_read_only_group, group_without_policy = self.create_objects_explicitly(data, groups)
+    
+            if groups and group_without_policy is not None:
+                group_without_policy = None
+    
+            if not has_admin_group:
+                admin_group = _system_admin_group()
+                groups[admin_group.id] = admin_group
+    
+            if not has_read_only_group:
+                read_only_group = _system_read_only_group()
+                groups[read_only_group.id] = read_only_group
+    
+            if not has_user_group:
+                user_group = _system_user_group()
+                groups[user_group.id] = user_group
+    
+            users = self.collect_user_group(data, perm_lookup, users, groups, group_without_policy)
+    
+            for cred_dict in data["credentials"]:
+                credential = models.Credentials(
+                    id=cred_dict["id"],
+                    is_new=False,
+                    auth_provider_type=cred_dict["auth_provider_type"],
+                    auth_provider_id=cred_dict["auth_provider_id"],
+                    data=cred_dict["data"],
+                )
+                credentials[cred_dict["id"]] = credential
+                users[cred_dict["user_id"]].credentials.append(credential)
+    
+            users = self.refresh_tokens(data, users, credentials)
+    
+            self._groups = groups
+            self._users = users
+            self._build_token_id_to_user_id()
+            self._async_schedule_save(INITIAL_LOAD_SAVE_DELAY)
+    
+    
+            has_admin_group = False
+            has_user_group = False
+            has_read_only_group = False
             group_without_policy = None
-
-        if not has_admin_group:
-            admin_group = _system_admin_group()
-            groups[admin_group.id] = admin_group
-
-        if not has_read_only_group:
-            read_only_group = _system_read_only_group()
-            groups[read_only_group.id] = read_only_group
-
-        if not has_user_group:
-            user_group = _system_user_group()
-            groups[user_group.id] = user_group
-
-        users = self.collect_user_group(data, perm_lookup, users, groups, group_without_policy)
-
-        for cred_dict in data["credentials"]:
-            credential = models.Credentials(
-                id=cred_dict["id"],
-                is_new=False,
-                auth_provider_type=cred_dict["auth_provider_type"],
-                auth_provider_id=cred_dict["auth_provider_id"],
-                data=cred_dict["data"],
-            )
-            credentials[cred_dict["id"]] = credential
-            users[cred_dict["user_id"]].credentials.append(credential)
-
-        users = self.refresh_tokens(data, users, credentials)
-
-        self._groups = groups
-        self._users = users
-        self._build_token_id_to_user_id()
-        self._async_schedule_save(INITIAL_LOAD_SAVE_DELAY)
-
-
-        has_admin_group = False
-        has_user_group = False
-        has_read_only_group = False
-        group_without_policy = None
-
-        for group_dict in data.get("groups", []):
-            policy: PolicyType | None = None
-
-            if group_dict["id"] == GROUP_ID_ADMIN:
-                has_admin_group = True
-
-                name = GROUP_NAME_ADMIN
-                policy = system_policies.ADMIN_POLICY
-                system_generated = True
-
-            elif group_dict["id"] == GROUP_ID_USER:
-                has_user_group = True
-
-                name = GROUP_NAME_USER
-                policy = system_policies.USER_POLICY
-                system_generated = True
-
-            elif group_dict["id"] == GROUP_ID_READ_ONLY:
-                has_read_only_group = True
-
-                name = GROUP_NAME_READ_ONLY
-                policy = system_policies.READ_ONLY_POLICY
-                system_generated = True
-
-            else:
-                name = group_dict["name"]
-                policy = group_dict.get("policy")
-                system_generated = False
-
-            if policy is None:
-                group_without_policy = group_dict["id"]
-                continue
-
-            groups[group_dict["id"]] = models.Group(
-                id=group_dict["id"],
-                name=name,
-                policy=policy,
-                system_generated=system_generated,
-            )
-
-            return (groups, has_admin_group, has_user_group, has_read_only_group, group_without_policy)
+    
+            for group_dict in data.get("groups", []):
+                policy: PolicyType | None = None
+    
+                if group_dict["id"] == GROUP_ID_ADMIN:
+                    has_admin_group = True
+    
+                    name = GROUP_NAME_ADMIN
+                    policy = system_policies.ADMIN_POLICY
+                    system_generated = True
+    
+                elif group_dict["id"] == GROUP_ID_USER:
+                    has_user_group = True
+    
+                    name = GROUP_NAME_USER
+                    policy = system_policies.USER_POLICY
+                    system_generated = True
+    
+                elif group_dict["id"] == GROUP_ID_READ_ONLY:
+                    has_read_only_group = True
+    
+                    name = GROUP_NAME_READ_ONLY
+                    policy = system_policies.READ_ONLY_POLICY
+                    system_generated = True
+    
+                else:
+                    name = group_dict["name"]
+                    policy = group_dict.get("policy")
+                    system_generated = False
+    
+                if policy is None:
+                    group_without_policy = group_dict["id"]
+                    continue
+    
+                groups[group_dict["id"]] = models.Group(
+                    id=group_dict["id"],
+                    name=name,
+                    policy=policy,
+                    system_generated=system_generated,
+                )
+    
+                return (groups, has_admin_group, has_user_group, has_read_only_group, group_without_policy)
         
     async def collect_user_groups(data: dict[str, list[dict[str, Any]]],
                                   perm_lookup: PermissionLookup,
