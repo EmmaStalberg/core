@@ -134,7 +134,7 @@ async def websocket_run(
         connection.send_error(
             msg["id"],
             "pipeline required",
-            "A valid pipline ID is required."
+            "A valid pipeline ID is required."
 
         )
         return
