@@ -298,7 +298,7 @@ class AuthStore:
     async def create_objects_explicitly(data: dict[str, list[dict[str, Any]]],
                                         groups: dict[str, models.Group]) -> tuple[dict[str, models.Group], bool, bool, bool, Optional[str]]:
 
-    async def async_load(self) -> None:
+        async def async_load(self) -> None:
         """Load the users."""
         if self._loaded:
             raise RuntimeError("Auth storage is already loaded")
