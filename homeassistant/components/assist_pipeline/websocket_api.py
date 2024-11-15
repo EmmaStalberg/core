@@ -157,7 +157,7 @@ async def get_pipeline_or_error(
     hass: HomeAssistant,
 
     connection: websocket_api.ActiveConnection, 
-    msg: dict[str, Any], 
+    msg: dict[str, Any],
     pipeline_id: str
 
 ) -> Pipeline | None:
@@ -236,11 +236,11 @@ async def create_stt_stream(
         if incoming_sample_rate != SAMPLE_RATE:
             chunk, state = audioop.ratecv(
 
-                chunk, 
-                SAMPLE_WIDTH, 
-                SAMPLE_CHANNELS, 
-                incoming_sample_rate, 
-                SAMPLE_RATE, 
+                chunk,
+                SAMPLE_WIDTH,
+                SAMPLE_CHANNELS,
+                incoming_sample_rate,
+                SAMPLE_RATE,
                 state
 
             )
@@ -310,8 +310,8 @@ async def execute_pipeline_run(
 
 async def validate_pipeline(
 
-    connection: websocket_api.ActiveConnection, 
-    msg: dict[str, Any], 
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
     pipeline_input: PipelineInput
 
 ) -> bool:
