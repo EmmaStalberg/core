@@ -303,41 +303,51 @@ class AuthStore:
             if self._loaded:
                 raise RuntimeError("Auth storage is already loaded")
             self._loaded = True
-    
+
+            
             dev_reg = dr.async_get(self.hass)
             ent_reg = er.async_get(self.hass)
             data = await self._store.async_load()
-    
+
+            
             perm_lookup = PermissionLookup(ent_reg, dev_reg)
             self._perm_lookup = perm_lookup
     
             if data is None or not isinstance(data, dict):
                 self._set_defaults()
                 return
-    
+
+            
             users: dict[str, models.User] = {}
             groups: dict[str, models.Group] = {}
             credentials: dict[str, models.Credentials] = {}
-    
+
+            
             groups, has_admin_group, has_user_group, has_read_only_group, group_without_policy = self.create_objects_explicitly(data, groups)
-    
+
+            
             if groups and group_without_policy is not None:
                 group_without_policy = None
-    
+
+            
             if not has_admin_group:
                 admin_group = _system_admin_group()
                 groups[admin_group.id] = admin_group
-    
+
+            
             if not has_read_only_group:
                 read_only_group = _system_read_only_group()
                 groups[read_only_group.id] = read_only_group
-    
+
+            
             if not has_user_group:
                 user_group = _system_user_group()
                 groups[user_group.id] = user_group
-    
+
+            
             users = self.collect_user_group(data, perm_lookup, users, groups, group_without_policy)
-    
+
+            
             for cred_dict in data["credentials"]:
                 credential = models.Credentials(
                     id=cred_dict["id"],
@@ -348,15 +358,18 @@ class AuthStore:
                 )
                 credentials[cred_dict["id"]] = credential
                 users[cred_dict["user_id"]].credentials.append(credential)
-    
+
+            
             users = self.refresh_tokens(data, users, credentials)
-    
+
+            
             self._groups = groups
             self._users = users
             self._build_token_id_to_user_id()
             self._async_schedule_save(INITIAL_LOAD_SAVE_DELAY)
     
-    
+
+            
             has_admin_group = False
             has_user_group = False
             has_read_only_group = False
