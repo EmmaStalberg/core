@@ -63,6 +63,7 @@ class CommandLineAuthProvider(AuthProvider):
         """Return a flow to login."""
         return CommandLineLoginFlow(self)
 
+
     async def _run_subprocess(self, env: dict) -> asyncio.subprocess.Process:
         try:
             process = await asyncio.create_subprocess_exec(
@@ -111,6 +112,7 @@ class CommandLineAuthProvider(AuthProvider):
         if self.config[CONF_META]:
             stdout, _ = await process.communicate()
             self._process_meta(self, username, stdout)
+
 
     async def async_get_or_create_credentials(
         self, flow_result: Mapping[str, str]

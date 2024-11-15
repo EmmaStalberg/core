@@ -1,0 +1,6 @@
+projectKey=home_assistant
+serverUrl=http://sonarqube:9000
+serverVersion=10.3.0.82913
+dashboardUrl=http://sonarqube:9000/dashboard?id=home_assistant
+ceTaskId=AZKXy62a_YTJPwi99RQV
+ceTaskUrl=http://sonarqube:9000/api/ce/task?id=AZKXy62a_YTJPwi99RQV
