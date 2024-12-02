@@ -35,8 +35,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Initialize the domain-specific data
     hass.data[DOMAIN] = {}
 
-    # Optionally, set a state or initialize any service here
+    # Initialize states for the integration
     hass.states.async_set(f"{DOMAIN}.integration", "loaded")
+    hass.states.async_set(f"{DOMAIN}.last_coordinates", None)
+    hass.states.async_set(f"{DOMAIN}.last_search", None)
 
     # Register the search service
     hass.services.async_register(
@@ -46,7 +48,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         schema=vol.Schema({vol.Required("query"): str}),
     )
 
-    # Register the get_coordinates service. Not sure if this is needed
+    # Register the get_coordinates service
     hass.services.async_register(
         DOMAIN,
         "get_coordinates",
@@ -60,7 +62,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         "get_address_coordinates",
         async_handle_get_address_coordinates,
         schema=vol.Schema({vol.Required("query"): str}),
-        # schema=cv.make_entity_service_schema({vol.Required("query"): str}),
     )
 
     return True
@@ -107,23 +108,15 @@ async def async_handle_search(hass: HomeAssistant, call: ServiceCall) -> dict[st
     query = call.data.get("query", "")
     if not query:
         error_message = {"error": "Query is missing or empty"}
-        hass.states.async_set(
-            f"{DOMAIN}.last_search", f"Error: {error_message['error']}"
-        )
+        hass.states.async_set(f"{DOMAIN}.last_search", error_message["error"])
         return error_message
 
     results = search_address(query)
 
-    # fire event with error or full result
     if "error" in results:
-        hass.states.async_set(f"{DOMAIN}.last_search", f"Error: {results['error']}")
-        hass.bus.async_fire(f"{DOMAIN}_event", {"error": results["error"]})
+        hass.states.async_set(f"{DOMAIN}.last_search", results["error"])
     else:
-        hass.bus.async_fire(f"{DOMAIN}_event",
-                            {"type": "search",
-                             "query": query,
-                             "results": results
-                             })
+        hass.states.async_set(f"{DOMAIN}.last_search", results)
 
     return results
 
@@ -171,15 +164,16 @@ async def async_handle_get_address_coordinates(
 
     coordinates = get_address_coordinates(query)
 
-    # Fire event with error or coordinates
     if "error" in coordinates:
         _LOGGER.error(f"Error fetching coordinates: {coordinates['error']}")
-        hass.bus.async_fire(f"{DOMAIN}_event", {"error": coordinates["error"]})
+        hass.states.async_set(f"{DOMAIN}.last_coordinates", coordinates["error"])
     else:
-        hass.bus.async_fire(f"{DOMAIN}_event",
-                            {"type": "get_coordinates",
-                             "query": query,
-                             "coordinates": coordinates
-                            })
+        hass.states.async_set(
+            f"{DOMAIN}.last_coordinates",
+            {
+                "query": query,
+                "coordinates": coordinates,
+            },
+        )
 
     return coordinates
