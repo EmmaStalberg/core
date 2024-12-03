@@ -38,33 +38,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Optionally, set a state or initialize any service here
     hass.states.async_set(f"{DOMAIN}.integration", "loaded")
 
-    # Register the search service
-    hass.services.async_register(
-        DOMAIN,
-        "search",
-        async_handle_search,
-        schema=vol.Schema({vol.Required("query"): str}),
-        supports_response=SupportsResponse.ONLY,
-    )
-
-    # Register the get_coordinates service. Not sure if this is needed
-    hass.services.async_register(
-        DOMAIN,
-        "get_coordinates",
-        async_handle_get_coordinates,
-        schema=cv.make_entity_service_schema({vol.Required("json_data"): cv.Any}),
-        supports_response=SupportsResponse.ONLY,
-    )
-
-    # Register the get_address_coordinates service
-    hass.services.async_register(
-        DOMAIN,
-        "get_address_coordinates",
-        async_handle_get_address_coordinates,
-        schema=vol.Schema({vol.Required("query"): str}),
-        # schema=cv.make_entity_service_schema({vol.Required("query"): str}),
-        supports_response=SupportsResponse.ONLY,
-    )
+    _setup_all_services(hass)
 
     return True
 
@@ -93,97 +67,125 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 #     """Unload a config entry."""
 #     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
+def _setup_all_services(hass: HomeAssistant) -> None:
+    async def async_handle_search(hass: HomeAssistant, call: ServiceCall) -> dict[str, str]:
+        """Handle a service call to search for an address or coordinates with OpenStreetMap.
 
-async def async_handle_search(hass: HomeAssistant, call: ServiceCall) -> dict[str, str]:
-    """Handle a service call to search for an address or coordinates with OpenStreetMap.
+        Fetches results based on the query from the service call and updates the last search state in Home Assistant.
 
-    Fetches results based on the query from the service call and updates the last search state in Home Assistant.
+        Args:
+            hass (HomeAssistant): The Home Assistant instance.
+            call (ServiceCall): The service call object containing the data payload.
 
-    Args:
-        hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
+        Returns:
+            dict[str, str]: A dictionary containing the search results if successful, or an error message.
 
-    Returns:
-        dict[str, str]: A dictionary containing the search results if successful, or an error message.
+        """
+        query = call.data.get("query", "")
+        if not query:
+            error_message = {"error": "Query is missing or empty"}
+            hass.states.async_set(
+                f"{DOMAIN}.last_search", f"Error: {error_message['error']}"
+            )
+            return error_message
 
-    """
-    query = call.data.get("query", "")
-    if not query:
-        error_message = {"error": "Query is missing or empty"}
-        hass.states.async_set(
-            f"{DOMAIN}.last_search", f"Error: {error_message['error']}"
-        )
-        return error_message
+        results = search_address(query)
 
-    results = search_address(query)
+        # fire event with error or full result
+        if "error" in results:
+            hass.states.async_set(f"{DOMAIN}.last_search", f"Error: {results['error']}")
+            hass.bus.async_fire(f"{DOMAIN}_event", {"error": results["error"]})
+        else:
+            hass.bus.async_fire(f"{DOMAIN}_event",
+                                {"type": "search",
+                                "query": query,
+                                "results": results
+                                })
 
-    # fire event with error or full result
-    if "error" in results:
-        hass.states.async_set(f"{DOMAIN}.last_search", f"Error: {results['error']}")
-        hass.bus.async_fire(f"{DOMAIN}_event", {"error": results["error"]})
-    else:
-        hass.bus.async_fire(f"{DOMAIN}_event",
-                            {"type": "search",
-                             "query": query,
-                             "results": results
-                             })
-
-    return results
-
-
-# right now, this can't be called from frontend since it does not fire any events
-async def async_handle_get_coordinates(
-    hass: HomeAssistant, call: ServiceCall
-) -> dict[str, str]:
-    """Handle the service call for extracting coordinates from JSON.
-
-    Args:
-        hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
-
-    Returns:
-        dict[str, str]: A dictionary containing the search results if json_data, or an error message.
-
-    """
-    json_data = call.data.get("json_data")
-    if not json_data:
-        _LOGGER.error("No JSON data provided")
-        return {"error": "No JSON data provided"}
-
-    return get_Coordinates(json_data)
+        return results
 
 
-# Service handler for getting coordinates from an address
-async def async_handle_get_address_coordinates(
-    hass: HomeAssistant, call: ServiceCall
-) -> dict[str, str]:
-    """Handle the service call to get coordinates from an address query.
+    # right now, this can't be called from frontend since it does not fire any events
+    async def async_handle_get_coordinates(
+        hass: HomeAssistant, call: ServiceCall
+    ) -> dict[str, str]:
+        """Handle the service call for extracting coordinates from JSON.
 
-    Args:
-        hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
+        Args:
+            hass (HomeAssistant): The Home Assistant instance.
+            call (ServiceCall): The service call object containing the data payload.
 
-    Returns:
-        dict[str, str]: A dictionary containing the search results if json_data, or an error message.
+        Returns:
+            dict[str, str]: A dictionary containing the search results if json_data, or an error message.
 
-    """
-    query = call.data.get("query")
-    if not query:
-        _LOGGER.error("No query provided")
-        return {"error": "No query provided"}
+        """
+        json_data = call.data.get("json_data")
+        if not json_data:
+            _LOGGER.error("No JSON data provided")
+            return {"error": "No JSON data provided"}
 
-    coordinates = get_address_coordinates(query)
-    hass.states.async_set(DOMAIN, coordinates)
+        return get_Coordinates(json_data)
 
-    # Fire event with error or coordinates
-    if "error" in coordinates:
-        _LOGGER.error(f"Error fetching coordinates: {coordinates['error']}")
-        hass.bus.async_fire(f"{DOMAIN}_event", {"error": coordinates["error"]})
-    else:
-        hass.bus.async_fire(f"{DOMAIN}_event",
-                            {"type": "get_address_coordinates",
-                             "query": query,
-                             "coordinates": coordinates
-                            })
 
-    return coordinates
+    # Service handler for getting coordinates from an address
+    async def async_handle_get_address_coordinates(
+        hass: HomeAssistant, call: ServiceCall
+    ) -> dict[str, str]:
+        """Handle the service call to get coordinates from an address query.
+
+        Args:
+            hass (HomeAssistant): The Home Assistant instance.
+            call (ServiceCall): The service call object containing the data payload.
+
+        Returns:
+            dict[str, str]: A dictionary containing the search results if json_data, or an error message.
+
+        """
+        query = call.data.get("query")
+        if not query:
+            _LOGGER.error("No query provided")
+            return {"error": "No query provided"}
+
+        coordinates = get_address_coordinates(query)
+        hass.states.async_set(DOMAIN, coordinates)
+
+        # Fire event with error or coordinates
+        if "error" in coordinates:
+            _LOGGER.error(f"Error fetching coordinates: {coordinates['error']}")
+            hass.bus.async_fire(f"{DOMAIN}_event", {"error": coordinates["error"]})
+        else:
+            hass.bus.async_fire(f"{DOMAIN}_event",
+                                {"type": "get_address_coordinates",
+                                "query": query,
+                                "coordinates": coordinates
+                                })
+
+        return coordinates
+
+    # Register the search service
+    hass.services.async_register(
+        DOMAIN,
+        "search",
+        async_handle_search,
+        schema=vol.Schema({vol.Required("query"): str}),
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    # Register the get_coordinates service. Not sure if this is needed
+    hass.services.async_register(
+        DOMAIN,
+        "get_coordinates",
+        async_handle_get_coordinates,
+        schema=cv.make_entity_service_schema({vol.Required("json_data"): cv.Any}),
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    # Register the get_address_coordinates service
+    hass.services.async_register(
+        DOMAIN,
+        "get_address_coordinates",
+        async_handle_get_address_coordinates,
+        schema=vol.Schema({vol.Required("query"): str}),
+        # schema=cv.make_entity_service_schema({vol.Required("query"): str}),
+        supports_response=SupportsResponse.ONLY,
+    )
