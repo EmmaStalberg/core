@@ -29,6 +29,12 @@ class TestSearchFunctions(unittest.TestCase):
                 }
             ],
         }
+        # The @patch decorator replaces requests.get with mock_get, a mock object.
+        # When search_address("Sample Address") is called, requests.get() is replaced by mock_get.
+        # mock_get returns the MockResponse object that is defined earlier, simulating an API response.
+        # MockResponse includes a json() method (via lambda) that provides mocked JSON data.
+        # The search_address function processes this mock data as if it came from the real API.
+
         mock_get.return_value = type("MockResponse", (object,), mock_response)
         # Call the function and check the result
         result = search_address("Sample Address")
@@ -54,6 +60,8 @@ class TestSearchFunctions(unittest.TestCase):
     def test_get_Coordinates_success(self):
         """Tests the success of get_coordinates function."""
         # Simulate valid JSON data with lat and lon
+        # No @patch is needed since we don't mock any API
+        # Instead we write down the lat and lon we want to check
         sample_json = [
             {
                 "lat": "57.69168362481461",

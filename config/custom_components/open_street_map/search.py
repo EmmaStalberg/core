@@ -26,6 +26,7 @@ def search_address(query: str):
     except requests.exceptions.RequestException as error:
         return {"error": f"Request failed: {error}"}
 
+
 def get_Coordinates(json_data):
     """Extract coordinates from Json file."""
 
