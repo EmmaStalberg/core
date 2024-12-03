@@ -6,7 +6,7 @@ from datetime import timedelta
 import hmac
 import itertools
 from logging import getLogger
-from typing import Any, Optional
+from typing import Any
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
@@ -45,7 +45,7 @@ class AuthStore:
         self._loaded = False
         self._users: dict[str, models.User] = None  # type: ignore[assignment]
         self._groups: dict[str, models.Group] = None  # type: ignore[assignment]
-        self._perm_lookup: Optional[PermissionLookup] = None  
+        self._perm_lookup: PermissionLookup | None = None
         self._store = Store[dict[str, list[dict[str, Any]]]](
             hass, STORAGE_VERSION, STORAGE_KEY, private=True, atomic_writes=True
         )
@@ -313,7 +313,13 @@ class AuthStore:
         groups: dict[str, models.Group] = {}
         credentials: dict[str, models.Credentials] = {}
 
-        groups, has_admin_group, has_user_group, has_read_only_group, group_without_policy = self.create_objects_explicitly(data, groups)
+        (
+            groups,
+            has_admin_group,
+            has_user_group,
+            has_read_only_group,
+            group_without_policy,
+        ) = self.create_objects_explicitly(data, groups)
 
         if groups and group_without_policy is not None:
             group_without_policy = None
@@ -330,7 +336,9 @@ class AuthStore:
             user_group = _system_user_group()
             groups[user_group.id] = user_group
 
-        users = self.collect_user_group(data, perm_lookup, users, groups, group_without_policy)
+        users = self.collect_user_group(
+            data, perm_lookup, users, groups, group_without_policy
+        )
 
         for cred_dict in data["credentials"]:
             credential = models.Credentials(
@@ -350,9 +358,9 @@ class AuthStore:
         self._build_token_id_to_user_id()
         self._async_schedule_save(INITIAL_LOAD_SAVE_DELAY)
 
-    def create_objects_explicitly(self, 
-                                  data: dict[str, list[dict[str, Any]]], 
-                                  groups: dict[str, models.Group]) -> tuple[dict[str, models.Group], bool, bool, bool, Optional[str]]:
+    def create_objects_explicitly(
+        self, data: dict[str, list[dict[str, Any]]], groups: dict[str, models.Group]
+    ) -> tuple[dict[str, models.Group], bool, bool, bool, str | None]:
         has_admin_group = False
         has_user_group = False
         has_read_only_group = False
@@ -398,14 +406,22 @@ class AuthStore:
                 system_generated=system_generated,
             )
 
-        return groups, has_admin_group, has_user_group, has_read_only_group, group_without_policy
+        return (
+            groups,
+            has_admin_group,
+            has_user_group,
+            has_read_only_group,
+            group_without_policy,
+        )
 
-    def collect_user_group(self, 
-                           data: dict[str, list[dict[str, Any]]], 
-                           perm_lookup: PermissionLookup, 
-                           users: dict[str, models.User], 
-                           groups: dict[str, models.Group], 
-                           group_without_policy) -> dict[str, models.User]:
+    def collect_user_group(
+        self,
+        data: dict[str, list[dict[str, Any]]],
+        perm_lookup: PermissionLookup,
+        users: dict[str, models.User],
+        groups: dict[str, models.Group],
+        group_without_policy,
+    ) -> dict[str, models.User]:
         migrate_users_to_admin_group = not groups and group_without_policy is None
 
         for user_dict in data["users"]:
@@ -430,10 +446,12 @@ class AuthStore:
             )
         return users
 
-    def refresh_tokens(self, 
-                       data: dict[str, list[dict[str, Any]]], 
-                       users: dict[str, models.User], 
-                       credentials: dict[str, models.Credentials]) -> dict[str, models.User]:
+    def refresh_tokens(
+        self,
+        data: dict[str, list[dict[str, Any]]],
+        users: dict[str, models.User],
+        credentials: dict[str, models.Credentials],
+    ) -> dict[str, models.User]:
         for rt_dict in data["refresh_tokens"]:
             if "jwt_key" not in rt_dict:
                 continue
@@ -450,7 +468,11 @@ class AuthStore:
                 continue
 
             if (token_type := rt_dict.get("token_type")) is None:
-                token_type = models.TOKEN_TYPE_SYSTEM if rt_dict["client_id"] is None else models.TOKEN_TYPE_NORMAL
+                token_type = (
+                    models.TOKEN_TYPE_SYSTEM
+                    if rt_dict["client_id"] is None
+                    else models.TOKEN_TYPE_NORMAL
+                )
 
             last_used_at = dt_util.parse_datetime(rt_dict.get("last_used_at", ""))
 

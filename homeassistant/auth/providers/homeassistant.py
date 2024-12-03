@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import os
 from collections.abc import Mapping
 import logging
+import os
 from typing import Any, cast
 
 import bcrypt
@@ -52,6 +52,7 @@ class InvalidUser(HomeAssistantError):
     """Raised when invalid user is specified.
     Will not be raised when validating authentication.
     """
+
     def __init__(
         self,
         *args: object,
@@ -152,7 +153,10 @@ class Data:
         username = self.normalize_username(username)
 
         # Instead of hardcoding the dummy password, get it from an environment variable
-        dummy = os.getenv("DUMMY_PASSWORD_HASH", "$2b$12$CiuFGszHx9eNHxPuQcwBWez4CwDTOcLTX5CbOpV6gef2nYuXkY7BO").encode('utf-8')
+        dummy = os.getenv(
+            "DUMMY_PASSWORD_HASH",
+            "$2b$12$CiuFGszHx9eNHxPuQcwBWez4CwDTOcLTX5CbOpV6gef2nYuXkY7BO",
+        ).encode("utf-8")
 
         found = None
 
@@ -261,6 +265,7 @@ class Data:
         """Save data."""
         if self._data is not None:
             await self._store.async_save(self._data)
+
 
 @AUTH_PROVIDERS.register("homeassistant")
 class HassAuthProvider(AuthProvider):
