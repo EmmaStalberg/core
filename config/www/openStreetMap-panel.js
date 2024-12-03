@@ -55,9 +55,10 @@ class OpenStreetMapPanel extends LitElement {
 
     async setup() {
         await this._getConfigEntries();
-        await this._doSearch();
-        await this._getAddressCoordinates();
-        await this._getCoordinates();
+        // i don't think these needs to be run here
+        // await this._doSearch();
+        // await this._getAddressCoordinates();
+        // await this._getCoordinates();
     }
 
     // not sure about this method...
@@ -87,7 +88,8 @@ class OpenStreetMapPanel extends LitElement {
                 {
                     config_entry_id: this.configEntryId,
                     query: this.searchTerm,
-                }
+                },
+                undefined, undefined, true
             );
             // update map - center around it and add marker
             // const lat = 57.6915335;
