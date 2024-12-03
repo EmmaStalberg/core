@@ -157,6 +157,7 @@ async def load_auth_provider_module(
     hass: HomeAssistant, provider: str
 ) -> types.ModuleType:
     """Load an auth provider."""
+    
     try:
         module = await async_import_module(
             hass, f"homeassistant.auth.providers.{provider}"
@@ -167,20 +168,21 @@ async def load_auth_provider_module(
             f"Unable to load auth provider {provider}: {err}"
         ) from err
 
-    if hass.config.skip_pip or not hasattr(module, "REQUIREMENTS"):
-        return module
+    should_return = hass.config.skip_pip or not hasattr(module, "REQUIREMENTS")
 
-    if (processed := hass.data.get(DATA_REQS)) is None:
-        processed = hass.data[DATA_REQS] = set()
-    elif provider in processed:
-        return module
+    if not should_return:
+        processed = hass.data.get(DATA_REQS, set())
+        
+        if provider in processed:
+            should_return = True
+        else:
+            reqs = module.REQUIREMENTS
+            await requirements.async_process_requirements(
+                hass, f"auth provider {provider}", reqs
+            )
+            processed.add(provider)
+            hass.data[DATA_REQS] = processed
 
-    reqs = module.REQUIREMENTS
-    await requirements.async_process_requirements(
-        hass, f"auth provider {provider}", reqs
-    )
-
-    processed.add(provider)
     return module
 
 

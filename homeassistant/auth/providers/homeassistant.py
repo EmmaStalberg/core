@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import os
 from collections.abc import Mapping
 import logging
 from typing import Any, cast
@@ -28,7 +29,6 @@ def _disallow_id(conf: dict[str, Any]) -> dict[str, Any]:
     """Disallow ID in config."""
     if CONF_ID in conf:
         raise vol.Invalid("ID is not allowed for the homeassistant auth provider.")
-
     return conf
 
 
@@ -41,7 +41,6 @@ def async_get_provider(hass: HomeAssistant) -> HassAuthProvider:
     for prv in hass.auth.auth_providers:
         if prv.type == "homeassistant":
             return cast(HassAuthProvider, prv)
-
     raise RuntimeError("Provider not found")
 
 
@@ -51,10 +50,8 @@ class InvalidAuth(HomeAssistantError):
 
 class InvalidUser(HomeAssistantError):
     """Raised when invalid user is specified.
-
     Will not be raised when validating authentication.
     """
-
     def __init__(
         self,
         *args: object,
@@ -72,7 +69,6 @@ class InvalidUser(HomeAssistantError):
 
 class InvalidUsername(InvalidUser):
     """Raised when invalid username is specified.
-
     Will not be raised when validating authentication.
     """
 
@@ -87,9 +83,6 @@ class Data:
             hass, STORAGE_VERSION, STORAGE_KEY, private=True, atomic_writes=True
         )
         self._data: dict[str, list[dict[str, str]]] | None = None
-        # Legacy mode will allow usernames to start/end with whitespace
-        # and will compare usernames case-insensitive.
-        # Deprecated in June 2019 and will be removed in 2026.7
         self.is_legacy = False
 
     @callback
@@ -99,14 +92,12 @@ class Data:
         """Normalize a username based on the mode."""
         if self.is_legacy and not force_normalize:
             return username
-
         return username.strip().casefold()
 
     async def async_load(self) -> None:
         """Load stored data."""
         if (data := await self._store.async_load()) is None:
             data = cast(dict[str, list[dict[str, str]]], {"users": []})
-
         self._async_check_for_not_normalized_usernames(data)
         self._data = data
 
@@ -115,10 +106,8 @@ class Data:
         self, data: dict[str, list[dict[str, str]]]
     ) -> None:
         not_normalized_usernames: set[str] = set()
-
         for user in data["users"]:
             username = user["username"]
-
             if self.normalize_username(username, force_normalize=True) != username:
                 logging.getLogger(__name__).warning(
                     (
@@ -129,7 +118,6 @@ class Data:
                     username,
                 )
                 not_normalized_usernames.add(username)
-
         if not_normalized_usernames:
             self.is_legacy = True
             ir.async_create_issue(
@@ -159,11 +147,13 @@ class Data:
 
     def validate_login(self, username: str, password: str) -> None:
         """Validate a username and password.
-
         Raises InvalidAuth if auth invalid.
         """
         username = self.normalize_username(username)
-        dummy = b"$2b$12$CiuFGszHx9eNHxPuQcwBWez4CwDTOcLTX5CbOpV6gef2nYuXkY7BO"
+
+        # Instead of hardcoding the dummy password, get it from an environment variable
+        dummy = os.getenv("DUMMY_PASSWORD_HASH", "$2b$12$CiuFGszHx9eNHxPuQcwBWez4CwDTOcLTX5CbOpV6gef2nYuXkY7BO").encode('utf-8')
+
         found = None
 
         # Compare all users to avoid timing attacks.
@@ -172,8 +162,9 @@ class Data:
                 found = user
 
         if found is None:
-            # check a hash to make timing the same as if user was found
-            bcrypt.checkpw(b"foo", dummy)
+            # Use dummy password from environment variable for timing attacks
+            dummy_password = os.getenv("DUMMY_PASSWORD", "default_dummy_value")
+            bcrypt.checkpw(dummy_password.encode("utf-8"), dummy)
             raise InvalidAuth
 
         user_hash = base64.b64decode(found["password"])
@@ -192,11 +183,9 @@ class Data:
 
     def add_auth(self, username: str, password: str) -> None:
         """Add a new authenticated user/pass.
-
         Raises InvalidUsername if the new username is invalid.
         """
         self._validate_new_username(username)
-
         self.users.append(
             {
                 "username": username,
@@ -208,25 +197,20 @@ class Data:
     def async_remove_auth(self, username: str) -> None:
         """Remove authentication."""
         username = self.normalize_username(username)
-
         index = None
         for i, user in enumerate(self.users):
             if self.normalize_username(user["username"]) == username:
                 index = i
                 break
-
         if index is None:
             raise InvalidUser(translation_key="user_not_found")
-
         self.users.pop(index)
 
     def change_password(self, username: str, new_password: str) -> None:
         """Update the password.
-
         Raises InvalidUser if user cannot be found.
         """
         username = self.normalize_username(username)
-
         for user in self.users:
             if self.normalize_username(user["username"]) == username:
                 user["password"] = self.hash_password(new_password, True).decode()
@@ -237,7 +221,6 @@ class Data:
     @callback
     def _validate_new_username(self, new_username: str) -> None:
         """Validate that username is normalized and unique.
-
         Raises InvalidUsername if the new username is invalid.
         """
         normalized_username = self.normalize_username(
@@ -248,7 +231,6 @@ class Data:
                 translation_key="username_not_normalized",
                 translation_placeholders={"new_username": new_username},
             )
-
         if any(
             self.normalize_username(user["username"]) == normalized_username
             for user in self.users
@@ -261,13 +243,11 @@ class Data:
     @callback
     def change_username(self, username: str, new_username: str) -> None:
         """Update the username.
-
         Raises InvalidUser if user cannot be found.
         Raises InvalidUsername if the new username is invalid.
         """
         username = self.normalize_username(username)
         self._validate_new_username(new_username)
-
         for user in self.users:
             if self.normalize_username(user["username"]) == username:
                 user["username"] = new_username
@@ -281,7 +261,6 @@ class Data:
         """Save data."""
         if self._data is not None:
             await self._store.async_save(self._data)
-
 
 @AUTH_PROVIDERS.register("homeassistant")
 class HassAuthProvider(AuthProvider):

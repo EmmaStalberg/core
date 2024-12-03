@@ -125,14 +125,13 @@ class VoiceCommandSegmenter:
         self.in_command = False
 
     def process(self, chunk_seconds: float, is_speech: bool | None) -> bool:
-        """Process samples using external VAD.
+        """Process samples using external VAD. Returns False when command is done."""
 
-        Returns False when command is done.
-        """
         if self.timed_out:
             self.timed_out = False
 
         self._timeout_seconds_left -= chunk_seconds
+
         if self._timeout_seconds_left <= 0:
             _LOGGER.warning(
                 "VAD end of speech detection timed out after %s seconds",
@@ -143,43 +142,66 @@ class VoiceCommandSegmenter:
             return False
 
         if not self.in_command:
-            if is_speech:
-                self._reset_seconds_left = self.reset_seconds
-                self._speech_seconds_left -= chunk_seconds
-                if self._speech_seconds_left <= 0:
-                    # Inside voice command
-                    self.in_command = True
-                    self._command_seconds_left = (
-                        self.command_seconds - self.speech_seconds
-                    )
-                    self._silence_seconds_left = self.silence_seconds
-                    _LOGGER.debug("Voice command started")
-            else:
-                # Reset if enough silence
-                self._reset_seconds_left -= chunk_seconds
-                if self._reset_seconds_left <= 0:
-                    self._speech_seconds_left = self.speech_seconds
-                    self._reset_seconds_left = self.reset_seconds
-        elif not is_speech:
-            # Silence in command
-            self._reset_seconds_left = self.reset_seconds
-            self._silence_seconds_left -= chunk_seconds
-            self._command_seconds_left -= chunk_seconds
-            if (self._silence_seconds_left <= 0) and (self._command_seconds_left <= 0):
-                # Command finished successfully
-                self.reset()
-                _LOGGER.debug("Voice command finished")
-                return False
-        else:
-            # Speech in command.
-            # Reset silence counter if enough speech.
-            self._reset_seconds_left -= chunk_seconds
-            self._command_seconds_left -= chunk_seconds
-            if self._reset_seconds_left <= 0:
-                self._silence_seconds_left = self.silence_seconds
-                self._reset_seconds_left = self.reset_seconds
+            return self._process_not_in_command(chunk_seconds, is_speech)
 
-        return True
+        return self._process_in_command(chunk_seconds, is_speech)
+
+    def _process_not_in_command(
+        self, chunk_seconds: float, is_speech: bool | None
+    ) -> bool:
+        if is_speech:
+            return self._handle_speech(chunk_seconds)
+        return self._handle_silence(chunk_seconds)
+
+    def _handle_speech(self, chunk_seconds: float) -> bool:
+        self._reset_seconds_left = self.reset_seconds
+        self._speech_seconds_left -= chunk_seconds
+
+        if self._speech_seconds_left <= 0:
+            self.in_command = True
+            self._command_seconds_left = self.command_seconds - self.speech_seconds
+            self._silence_seconds_left = self.silence_seconds
+            _LOGGER.debug("Voice command started")
+            return True
+
+        return True  # Still waiting for speech
+
+    def _handle_silence(self, chunk_seconds: float) -> bool:
+        self._reset_seconds_left -= chunk_seconds
+
+        if self._reset_seconds_left <= 0:
+            self._speech_seconds_left = self.speech_seconds
+            self._reset_seconds_left = self.reset_seconds
+
+        return True  # Still waiting for silence
+
+    def _process_in_command(self, chunk_seconds: float, is_speech: bool | None) -> bool:
+        if not is_speech:
+            return self._handle_command_silence(chunk_seconds)
+
+        return self._handle_command_speech(chunk_seconds)
+
+    def _handle_command_silence(self, chunk_seconds: float) -> bool:
+        self._reset_seconds_left = self.reset_seconds
+        self._silence_seconds_left -= chunk_seconds
+        self._command_seconds_left -= chunk_seconds
+
+        if (self._silence_seconds_left <= 0) and (self._command_seconds_left <= 0):
+            self.reset()
+            _LOGGER.debug("Voice command finished")
+            return False
+
+        return True  # Command still ongoing
+
+    def _handle_command_speech(self, chunk_seconds: float) -> bool:
+        self._reset_seconds_left -= chunk_seconds
+        self._command_seconds_left -= chunk_seconds
+
+        if self._reset_seconds_left <= 0:
+            self._silence_seconds_left = self.silence_seconds
+            self._reset_seconds_left = self.reset_seconds
+
+        return True  # Command still ongoing
 
     def process_with_vad(
         self,
