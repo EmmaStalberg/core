@@ -7,7 +7,6 @@ import requests
 
 from homeassistant.components.open_street_map import (
     get_address_coordinates,
-    get_Coordinates,
     search_address,
 )
 
@@ -57,40 +56,6 @@ class TestSearchFunctions(unittest.TestCase):
         mock_get.side_effect = requests.exceptions.RequestException("Mock failure")
         result = search_address("Test Address")
         assert result == {"error": "Request failed: Mock failure"}
-
-    def test_get_Coordinates_success(self):
-        """Tests the success of get_coordinates function."""
-        # Simulate valid JSON data with lat and lon
-        # No @patch is needed since we don't mock any API
-        # Instead we write down the lat and lon we want to check
-        sample_json = [
-            {
-                "lat": "57.69168362481461",
-                "lon": "11.95719433068511",
-            }
-        ]
-        result = get_Coordinates(sample_json)
-        # Make sure that the extraction of coordinates are correct
-        assert result == [57.69168362481461, 11.95719433068511]
-
-    def test_get_Coordinates_failure(self):
-        # Simulate empty JSON data
-        """Tests the failure of get_coordinates function."""
-        sample_json = []
-        result = get_Coordinates(sample_json)
-        # Check the error message when no coordinates are found
-        assert result == {"error": "Coordinates could not be extracted"}
-
-        # Simulate invalid coordinate data
-        sample_json = [
-            {
-                "lat": "invalid",
-                "lon": "data",
-            }
-        ]
-        result = get_Coordinates(sample_json)
-        # Check the error for invalid data
-        assert result == {"error": "Coordinates could not be extracted"}
 
     @patch("homeassistant.components.open_street_map.search.search_address")
     def test_get_address_coordinates_success(self, mock_search):

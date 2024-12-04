@@ -27,21 +27,8 @@ def search_address(query: str):
         return {"error": f"Request failed: {error}"}
 
 
-def get_Coordinates(json_data):
-    """Extract coordinates from Json file."""
-
-    try:
-        # Get the first result's latitude and longitude
-        latitude = float(json_data[0]["lat"])
-        longitude = float(json_data[0]["lon"])
-    except (IndexError, KeyError, ValueError):
-        return {"error": "Coordinates could not be extracted"}
-    else:
-        return [latitude, longitude]
-
-
 def get_address_coordinates(query: str):
-    """Combine search_address and get_coordinates to return coordinates directly.
+    """Search for an address and return its coordinates directly.
 
     Args:
         query (str): The address to search for.
@@ -55,4 +42,11 @@ def get_address_coordinates(query: str):
     if "error" in json_response:
         return {"error": json_response["error"]}
 
-    return get_Coordinates(json_response)
+    try:
+        # Get the first result's latitude and longitude
+        latitude = float(json_response[0]["lat"])
+        longitude = float(json_response[0]["lon"])
+    except (IndexError, KeyError, ValueError):
+        return {"error": "Coordinates could not be extracted"}
+    else:
+        return [latitude, longitude]
