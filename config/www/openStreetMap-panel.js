@@ -54,7 +54,7 @@ class OpenStreetMapPanel extends LitElement {
     }
 
     async setup() {
-        await this._getConfigEntries();
+        await this._getConfigEntries(); // if we dont change and start to use entries, this is not needed!
         // i don't think these needs to be run here
         // await this._doSearch();
         // await this._getAddressCoordinates();
