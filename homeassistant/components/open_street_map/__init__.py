@@ -13,12 +13,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
-from .search import (
-    get_address_coordinates,
-    get_Coordinates,
-    # AddressSearchView,
-    search_address,  # imports search function from search.py
-)
+from .search import get_address_coordinates, search_address
 
 # TODO List the platforms that you want to support. # pylint: disable=fixme
 # For your initial PR, limit it to 1 platform.
@@ -51,17 +46,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
     hass.components.websocket_api.async_register_command(
         "open_street_map/async_handle_search", async_handle_search
-    )
-
-    # Register the get_coordinates service. Not sure if this is needed
-    hass.services.async_register(
-        DOMAIN,
-        "get_coordinates",
-        async_handle_get_coordinates,
-        schema=cv.make_entity_service_schema({vol.Required("json_data"): cv.Any}),
-    )
-    hass.components.websocket_api.async_register_command(
-        "open_street_map/async_handle_get_coordinates", async_handle_get_coordinates
     )
 
     # Register the get_address_coordinates service
@@ -147,34 +131,6 @@ async def async_handle_search(
             f"{DOMAIN}_event", {"type": "search", "query": query, "results": results}
         )
 
-    connection.send_result(msg["id"], {"results": results})
-    return None
-
-
-@websocket_api.async_response
-# right now, this can't be called from frontend since it does not fire any events
-async def async_handle_get_coordinates(
-    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
-):
-    """Handle the service call for extracting coordinates from JSON.
-
-    Args:
-        hass (HomeAssistant): The Home Assistant instance.
-        connection (websocket_api): The Websocket API instance.
-        msg: The message.
-
-
-    Returns:
-        dict[str, str]: A dictionary containing the search results if json_data, or an error message.
-
-
-    """
-    json_data = msg.get("json_data")
-    if not json_data:
-        _LOGGER.error("No JSON data provided")
-        return {"error": "No JSON data provided"}
-
-    results = get_Coordinates(json_data)
     connection.send_result(msg["id"], {"results": results})
     return None
 
