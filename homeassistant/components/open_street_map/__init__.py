@@ -8,7 +8,7 @@ from homeassistant.components import websocket_api
 
 # from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import _LOGGER, HomeAssistant, ServiceCall
+from homeassistant.core import _LOGGER, HomeAssistant  # , ServiceCall
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
@@ -25,7 +25,9 @@ from .search import (
 # PLATFORMS: list[Platform] = [Platform.LIGHT]
 PLATFORMS: list[Platform] = []
 
+
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 
 # TODO Create ConfigEntry type alias with API object
 # TODO Rename type alias and update all entry annotations
@@ -85,12 +87,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 # ) -> bool:
 #     """Set up OpenStreetMap from a config entry."""
 
+
 #     # TODO 1. Create API instance
 #     # TODO 2. Validate the API connection (and authentication)
 #     # TODO 3. Store an API object for your platforms to access
 #     # entry.runtime_data = MyAPI(...)
 
+
 #     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
 
 #     return True
 
@@ -111,11 +116,16 @@ async def async_handle_search(
 
     Fetches results based on the query from the service call and updates the last search state in Home Assistant.
 
+
     Args:
         hass (HomeAssistant): The Home Assistant instance.
+        connection (websocket_api): The Websocket API instance.
+        msg: The message.
+
 
     Returns:
         dict[str, str]: A dictionary containing the search results if successful, or an error message.
+
 
     """
     query = msg.get("query", "")
@@ -150,10 +160,13 @@ async def async_handle_get_coordinates(
 
     Args:
         hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
+        connection (websocket_api): The Websocket API instance.
+        msg: The message.
+
 
     Returns:
         dict[str, str]: A dictionary containing the search results if json_data, or an error message.
+
 
     """
     json_data = msg.get("json_data")
@@ -175,9 +188,13 @@ async def async_handle_get_address_coordinates(
 
     Args:
         hass (HomeAssistant): The Home Assistant instance.
+        connection (websocket_api): The Websocket API instance.
+        msg: The message.
+
 
     Returns:
         dict[str, str]: A dictionary containing the search results if json_data, or an error message.
+
 
     """
     query = msg.get("query")
