@@ -1,0 +1,7 @@
+search:
+  fields:
+    query:
+
+get_address_coordinates:
+  fields:
+    query:

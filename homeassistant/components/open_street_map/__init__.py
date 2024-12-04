@@ -53,9 +53,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 # TODO uncomment this code and fix the todos. Note! Need to uncomment the imports as well
 # TODO Update entry annotation
-async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up OpenStreetMap from a config entry."""
 
     # TODO 1. Create API instance
@@ -109,9 +107,7 @@ async def async_setup_entry(
     return True
 
 
-async def async_unload_entry(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     # Unload platforms
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
@@ -122,8 +118,11 @@ async def async_unload_entry(
 
     return unload_ok
 
+
 def _setup_all_services(hass: HomeAssistant) -> None:
-    async def async_handle_search(hass: HomeAssistant, call: ServiceCall) -> dict[str, str]:
+    async def async_handle_search(
+        hass: HomeAssistant, call: ServiceCall
+    ) -> dict[str, str]:
         """Handle a service call to search for an address or coordinates with OpenStreetMap.
 
         Fetches results based on the query from the service call and updates the last search state in Home Assistant.
@@ -159,7 +158,6 @@ def _setup_all_services(hass: HomeAssistant) -> None:
 
         return results
 
-
     # Service handler for getting coordinates from an address
     async def async_handle_get_address_coordinates(
         hass: HomeAssistant, call: ServiceCall
@@ -189,9 +187,11 @@ def _setup_all_services(hass: HomeAssistant) -> None:
         # not sure if needed???
         if "error" in coordinates:
             _LOGGER.error(f"Error fetching coordinates: {coordinates['error']}")
-            hass.states.async_set(f"{DOMAIN}.last_search", f"Error: {coordinates['error']}")
+            hass.states.async_set(
+                f"{DOMAIN}.last_search", f"Error: {coordinates['error']}"
+            )
 
-         ## NOT SURE IF THIS IS NEEDED ??
+        ## NOT SURE IF THIS IS NEEDED ??
         # hass.bus.async_fire(
         #     f"{DOMAIN}_event",
         #     {"type": "get_address_coordinates", "query": query, "coordinates": coordinates},
