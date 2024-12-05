@@ -14,7 +14,6 @@ Enhance your Home Assistant experience with the OpenStreetMap (OSM) integration.
    Clone the repository and navigate to the `custom_components` directory:
    ```bash
    git clone https://github.com/EmmaStalberg/core.git
-   cd core/custom_components
    ```
 
 2. **Update Configuration**  
