@@ -19,7 +19,7 @@ def search_address(query: str):
     params = {"q": query, "format": "json"}
     try:
         response = requests.get(NOMINATIM_URL, params=params, timeout=5)
-        response.raise_for_status()  # Raise HTTPError for bad responses
+        # response.raise_for_status()  # Raise HTTPError for bad responses
         return response.json()  # Return parsed JSON response
     except requests.exceptions.Timeout:
         return {"error": "Request timed out"}

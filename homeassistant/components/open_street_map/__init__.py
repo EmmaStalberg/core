@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import voluptuous as vol
 
+from homeassistant.components import websocket_api
+
 # from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import _LOGGER, HomeAssistant, ServiceCall
+from homeassistant.core import _LOGGER, HomeAssistant  # , ServiceCall
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
@@ -23,7 +25,9 @@ from .search import (
 # PLATFORMS: list[Platform] = [Platform.LIGHT]
 PLATFORMS: list[Platform] = []
 
+
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 
 # TODO Create ConfigEntry type alias with API object
 # TODO Rename type alias and update all entry annotations
@@ -45,6 +49,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         async_handle_search,
         schema=vol.Schema({vol.Required("query"): str}),
     )
+    hass.components.websocket_api.async_register_command(
+        "open_street_map/async_handle_search", async_handle_search
+    )
 
     # Register the get_coordinates service. Not sure if this is needed
     hass.services.async_register(
@@ -52,6 +59,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         "get_coordinates",
         async_handle_get_coordinates,
         schema=cv.make_entity_service_schema({vol.Required("json_data"): cv.Any}),
+    )
+    hass.components.websocket_api.async_register_command(
+        "open_street_map/async_handle_get_coordinates", async_handle_get_coordinates
     )
 
     # Register the get_address_coordinates service
@@ -61,6 +71,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         async_handle_get_address_coordinates,
         schema=vol.Schema({vol.Required("query"): str}),
         # schema=cv.make_entity_service_schema({vol.Required("query"): str}),
+    )
+    hass.components.websocket_api.async_register_command(
+        "open_street_map/async_handle_get_address_coordinates",
+        async_handle_get_address_coordinates,
     )
 
     return True
@@ -73,12 +87,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 # ) -> bool:
 #     """Set up OpenStreetMap from a config entry."""
 
+
 #     # TODO 1. Create API instance
 #     # TODO 2. Validate the API connection (and authentication)
 #     # TODO 3. Store an API object for your platforms to access
 #     # entry.runtime_data = MyAPI(...)
 
+
 #     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
 
 #     return True
 
@@ -91,20 +108,27 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 #     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def async_handle_search(hass: HomeAssistant, call: ServiceCall) -> dict[str, str]:
+@websocket_api.async_response
+async def async_handle_search(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
+):
     """Handle a service call to search for an address or coordinates with OpenStreetMap.
 
     Fetches results based on the query from the service call and updates the last search state in Home Assistant.
 
+
     Args:
         hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
+        connection (websocket_api): The Websocket API instance.
+        msg: The message.
+
 
     Returns:
         dict[str, str]: A dictionary containing the search results if successful, or an error message.
 
+
     """
-    query = call.data.get("query", "")
+    query = msg.get("query", "")
     if not query:
         error_message = {"error": "Query is missing or empty"}
         hass.states.async_set(
@@ -116,55 +140,64 @@ async def async_handle_search(hass: HomeAssistant, call: ServiceCall) -> dict[st
 
     # fire event with error or full result
     if "error" in results:
-        hass.states.async_set(f"{DOMAIN}.last_search", f"Error: {results['error']}")
+        # hass.states.async_set(f"{DOMAIN}.last_search", f"Error: {results['error']}")
         hass.bus.async_fire(f"{DOMAIN}_event", {"error": results["error"]})
     else:
-        hass.bus.async_fire(f"{DOMAIN}_event",
-                            {"type": "search",
-                             "query": query,
-                             "results": results
-                             })
+        hass.bus.async_fire(
+            f"{DOMAIN}_event", {"type": "search", "query": query, "results": results}
+        )
 
-    return results
+    connection.send_result(msg["id"], {"results": results})
+    return None
 
 
+@websocket_api.async_response
 # right now, this can't be called from frontend since it does not fire any events
 async def async_handle_get_coordinates(
-    hass: HomeAssistant, call: ServiceCall
-) -> dict[str, str]:
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
+):
     """Handle the service call for extracting coordinates from JSON.
 
     Args:
         hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
+        connection (websocket_api): The Websocket API instance.
+        msg: The message.
+
 
     Returns:
         dict[str, str]: A dictionary containing the search results if json_data, or an error message.
 
+
     """
-    json_data = call.data.get("json_data")
+    json_data = msg.get("json_data")
     if not json_data:
         _LOGGER.error("No JSON data provided")
         return {"error": "No JSON data provided"}
 
-    return get_Coordinates(json_data)
+    results = get_Coordinates(json_data)
+    connection.send_result(msg["id"], {"results": results})
+    return None
 
 
+@websocket_api.async_response
 # Service handler for getting coordinates from an address
 async def async_handle_get_address_coordinates(
-    hass: HomeAssistant, call: ServiceCall
-) -> dict[str, str]:
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
+):
     """Handle the service call to get coordinates from an address query.
 
     Args:
         hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
+        connection (websocket_api): The Websocket API instance.
+        msg: The message.
+
 
     Returns:
         dict[str, str]: A dictionary containing the search results if json_data, or an error message.
 
+
     """
-    query = call.data.get("query")
+    query = msg.get("query")
     if not query:
         _LOGGER.error("No query provided")
         return {"error": "No query provided"}
@@ -176,10 +209,10 @@ async def async_handle_get_address_coordinates(
         _LOGGER.error(f"Error fetching coordinates: {coordinates['error']}")
         hass.bus.async_fire(f"{DOMAIN}_event", {"error": coordinates["error"]})
     else:
-        hass.bus.async_fire(f"{DOMAIN}_event",
-                            {"type": "get_coordinates",
-                             "query": query,
-                             "coordinates": coordinates
-                            })
+        hass.bus.async_fire(
+            f"{DOMAIN}_event",
+            {"type": "get_coordinates", "query": query, "coordinates": coordinates},
+        )
 
-    return coordinates
+    connection.send_result(msg["id"], {"results": coordinates})
+    return None
