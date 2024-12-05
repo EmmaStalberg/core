@@ -24,7 +24,8 @@ from homeassistant.components.websocket_api import (
     # ActiveConnection,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
+
+# from homeassistant.const import Platform
 from homeassistant.core import (
     # CALLBACK_TYPE,
     HomeAssistant,
@@ -56,9 +57,9 @@ NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 _LOGGER = logging.getLogger(__name__)
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
-PLATFORM_SCHEMA = cv.PLATFORM_SCHEMA
-PLATFORM_SCHEMA_BASE = cv.PLATFORM_SCHEMA_BASE
-PLATFORMS: list[Platform] = []
+# PLATFORM_SCHEMA = cv.PLATFORM_SCHEMA
+# PLATFORM_SCHEMA_BASE = cv.PLATFORM_SCHEMA_BASE
+# PLATFORMS: list[Platform] = []
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 SEARCH_SERVICE = "search"
@@ -81,8 +82,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
 
     hass.http.register_view(OpenStreetMapView(component))
+
     frontend.async_register_built_in_panel(
-        hass, DOMAIN, DOMAIN, "hass:OpenStreetMap"
+        hass,
+        component_name="open-street-map",
+        sidebar_title="Open Street Map",
+        sidebar_icon="mdi:map",
     )  # ??? last parameter
 
     # ??? hass might be open_street_map/methodname
@@ -153,8 +158,8 @@ class OpenStreetMapEntity(Entity):
 class OpenStreetMapView(http.HomeAssistantView):
     """View to retrieve content for OpenStreetMap."""
 
-    url = NOMINATIM_URL  # i guess ???
-    # name = ???
+    url = "/api/open_street_map"
+    name = "api:openstreetmap"
 
     def __init__(self, component: EntityComponent[OpenStreetMapEntity]) -> None:
         """Initialize the OpenStreetMap view."""
