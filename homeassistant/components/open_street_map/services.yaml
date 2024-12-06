@@ -2,8 +2,6 @@ get_address_coordinates:
   target:
     entity:
       domain: open_street_map
-      supported_features:
-        - 1
   fields:
     query:
       required: true
