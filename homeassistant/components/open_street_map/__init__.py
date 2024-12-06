@@ -11,18 +11,20 @@ from http import HTTPStatus
 import logging
 
 # import re
-# from typing import Any, Final, cast, final
+from typing import Any  # , Final, cast, final
+
 from aiohttp import web
 
 # from dateutil.rrule import rrulestr
 import voluptuous as vol
 
 from homeassistant.components import frontend, http, websocket_api
-from homeassistant.components.websocket_api import (
-    ERR_NOT_FOUND,
-    # ERR_NOT_SUPPORTED,
-    # ActiveConnection,
-)
+
+# from homeassistant.components.websocket_api import (
+#     ERR_NOT_FOUND,
+#     # ERR_NOT_SUPPORTED,
+#     # ActiveConnection,
+# )
 from homeassistant.config_entries import ConfigEntry
 
 # from homeassistant.const import Platform
@@ -122,21 +124,74 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class OpenStreetMapEntity(Entity):
     """Base class for the openstreetmap entities."""
 
-    ## not sure what is going in here ???
+    _entity_component_unrecorded_attributes = frozenset({"description", "coordinates"})
+
+    ## not sure what is going in here ??? maybe not needed??
     def __init__(self, query: str) -> None:
         """Initialize osm entity."""
         self._query = query
-        self._latestSearchedCoordinates = None
+        self._latestSearchedCoordinates: list[float] | None = None
+        self._state: str | None = (
+            None  # this is the coordinates that were searched latest???
+        )
         # may want to change this to the entire search results and also below in state
+
+    @property
+    def name(self) -> str:
+        """Return the name of the entity."""
+        return f"{DOMAIN} - {self._query}"
 
     @property
     def _unique_id(self) -> str:
         return f"{DOMAIN}_{self._query}"
 
     @property
-    def coordsFromLatestSearch(self) -> str | None:
+    def state(self) -> str | None:
+        """Return the state (coordinates) of the entity."""
+        return self._state
+
+    @property
+    def state_attributes(self) -> dict[str, Any] | None:
+        """Return the attributes for the entity (e.g., coordinates, description)."""
+        if self._latestSearchedCoordinates is None:
+            return None
+        return {
+            "coordinates": self._latestSearchedCoordinates,
+            "query": self._query,
+        }
+
+    @property
+    def coordsFromLatestSearch(self) -> list[float] | None:
         """Returns coordinates from latest search."""
         return self._latestSearchedCoordinates
+
+    async def async_update(self) -> None:
+        """Fetch the latest data from OpenStreetMap and update the entity's state."""
+        coordinates = await self.fetch_coordinates(self._query)
+        if coordinates:
+            self._latestSearchedCoordinates = coordinates
+            self._state = f"{coordinates[0]},{coordinates[1]}"
+
+    async def fetch_coordinates(self, query: str) -> list[float] | None:
+        """Fetch coordinates for the given query using the OpenStreetMap API."""
+        result = get_address_coordinates(query)  # Call the existing function you have
+        # if isinstance(result, dict) and "error" in result:
+        if "error" in result:
+            return None
+        return result
+
+    async def async_added_to_hass(self) -> None:
+        """Run when the entity is added to Home Assistant."""
+        await self.async_update()
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when the entity is removed from Home Assistant."""
+        # Clean up if necessary
+
+    # async def async_write_ha_state(self) -> None:
+    #     """Write the state to the state machine."""
+    #     super().async_write_ha_state()
+    #     # Any additional logic for scheduling state updates....???
 
     # this below might be a @callback async_write_ha_state instead??????!!!
     # maybe not like this???
