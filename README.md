@@ -47,7 +47,6 @@ This integration relies on several RESTful APIs provided by OpenStreetMap:
 
 The integration registers multiple services, including:
 - **Search Service**: The `search` service is registered to find addresses or coordinates using the OpenStreetMap Nominatim API. It supports handling search queries and returning results, which are then fired as events within Home Assistant.
-- **Get Coordinates Service**: The `get_coordinates` service extracts coordinates from a JSON payload, specifically designed to parse data from the OpenStreetMap APIs.
 - **Get Address Coordinates Service**: The `get_address_coordinates` service combines the search functionality to return coordinates directly from an address query.
 
 These services provide flexibility in how users can interact with the OpenStreetMap integration, enabling advanced geolocation features for various automation scenarios.
