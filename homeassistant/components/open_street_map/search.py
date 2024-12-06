@@ -1,8 +1,7 @@
 """Module to search for addresses or coordinates using the OpenStreetMap API."""
 
 import requests
-from shareLocation import generate_map_url
-
+from .shareLocation import generate_map_url
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
@@ -23,6 +22,7 @@ def search_address(query: str):
     try:
         response = requests.get(NOMINATIM_URL, params=params, timeout=5)
         # response.raise_for_status()  # Raise HTTPError for bad responses
+        print("THE JSON FILE RESPONSE", response.json())
         return response.json()  # Return parsed JSON response
     except requests.exceptions.Timeout:
         return {"error": "Request timed out"}
@@ -50,10 +50,11 @@ def get_address_coordinates(query: str):
         latitude = float(json_response[0]["lat"])
         longitude = float(json_response[0]["lon"])
         map_url = generate_map_url(latitude, longitude)
+        print("JSON file", json_response)
     except (IndexError, KeyError, ValueError):
         return {"error": "Coordinates could not be extracted"}
     else:
-        return {"latitude": latitude, "longitude": longitude, "map_url": map_url}
+        return {"lat": latitude, "lon": longitude, "map_url": map_url}
 
 
 def get_click_query(coordinates: dict[str, float]):
