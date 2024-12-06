@@ -22,7 +22,7 @@ INTERVAL = timedelta(minutes=5)
 async def test_setup(hass: HomeAssistant) -> None:
     """Test setup works."""
 
-    result = await async_setup_component(hass, DOMAIN, {"duckdns": {"domain": DOMAIN}})
+    result = await async_setup_component(hass, DOMAIN, {"open_street_map": {"domain": DOMAIN}})
 
     await hass.async_block_till_done()
 

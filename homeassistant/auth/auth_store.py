@@ -360,7 +360,7 @@ class AuthStore:
 
     def create_objects_explicitly(self,
                                   data: dict[str, list[dict[str, Any]]],
-                                  groups: dict[str, models.Group]) -> tuple[dict[str, models.Group], bool, bool, bool, Optional[str]]:
+                                  groups: dict[str, models.Group]) -> tuple[dict[str, models.Group], bool, bool, bool, str | None]:
         has_admin_group = False
         has_user_group = False
         has_read_only_group = False
