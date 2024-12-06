@@ -505,7 +505,7 @@ class AuthManager:
             expire_at,
             credential,
         )
-    
+
     def client_name_valid_long_lived_access_tokens(
         self,
         token_type: str | None = None,

@@ -5,6 +5,7 @@ from shareLocation import generate_map_url
 
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
 
 
 # Search for an address using OpenStreetMap's Nominatim API
@@ -53,3 +54,25 @@ def get_address_coordinates(query: str):
         return {"error": "Coordinates could not be extracted"}
     else:
         return {"latitude": latitude, "longitude": longitude, "map_url": map_url}
+
+
+def get_click_query(coordinates: dict[str, float]):
+    """Get information needed when a user clicks on the map.
+
+    Args:
+        coordinates (dict[str, float]): a dict representing the coordinates of where was clicked
+
+    """
+    params = {
+        "lat": coordinates["lat"],
+        "lon": coordinates["lon"],
+        "extratags": 1,
+        "format": "jsonv2",
+    }
+    try:
+        response = requests.get(NOMINATIM_REVERSE_URL, params=params, timeout=5)
+        return response.json()  # Return parsed JSON response
+    except requests.exceptions.Timeout:
+        return {"error": "Request timed out"}
+    except requests.exceptions.RequestException as error:
+        return {"error": f"Request failed: {error}"}

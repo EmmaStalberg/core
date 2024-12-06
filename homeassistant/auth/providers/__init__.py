@@ -157,7 +157,7 @@ async def load_auth_provider_module(
     hass: HomeAssistant, provider: str
 ) -> types.ModuleType:
     """Load an auth provider."""
-    
+
     try:
         module = await async_import_module(
             hass, f"homeassistant.auth.providers.{provider}"
@@ -172,7 +172,7 @@ async def load_auth_provider_module(
 
     if not should_return:
         processed = hass.data.get(DATA_REQS, set())
-        
+
         if provider in processed:
             should_return = True
         else:
