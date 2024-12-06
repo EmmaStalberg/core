@@ -418,7 +418,6 @@ FLOWS = {
         "onewire",
         "onvif",
         "open_meteo",
-        "open_street_map",
         "openai_conversation",
         "openexchangerates",
         "opengarage",
