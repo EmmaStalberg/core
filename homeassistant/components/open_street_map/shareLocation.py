@@ -13,4 +13,4 @@ def generate_map_url(lat: float, lon: float) -> str:
         str: The OpenStreetMap URL.
 
     """
-    return f"https://www.openstreetmap.org/?mlat={lat}&mlon={lon}#map=16/{lat}/{lon}"
+    return f"https://www.openstreetmap.org/#map=16/{lon}/{lat}&layers=N"

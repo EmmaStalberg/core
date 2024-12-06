@@ -1,6 +1,8 @@
 """Module to search for addresses or coordinates using the OpenStreetMap API."""
 
 import requests
+from shareLocation import generate_map_url
+
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
@@ -46,7 +48,8 @@ def get_address_coordinates(query: str):
         # Get the first result's latitude and longitude
         latitude = float(json_response[0]["lat"])
         longitude = float(json_response[0]["lon"])
+        map_url = generate_map_url(latitude, longitude)
     except (IndexError, KeyError, ValueError):
         return {"error": "Coordinates could not be extracted"}
     else:
-        return [latitude, longitude]
+        return {"latitude": latitude, "longitude": longitude, "map_url": map_url}
