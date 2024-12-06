@@ -37,9 +37,15 @@ class TestSearchFunctions(unittest.TestCase):
         mock_get.return_value = type("MockResponse", (object,), mock_response)
         # Call the function and check the result
         result = search_address("Test Address")
+
+        # print("Actual result:", result)
+
         # Use plain assert statements
         assert isinstance(result, list)
         assert "display_name" in result[0]
+        assert "lat" in result[0]
+        assert "lon" in result[0]
+        assert result[0]["lat"] == "57.69168362481461"
 
     @patch("homeassistant.components.open_street_map.search.requests.get")
     def test_search_address_timeout(self, mock_get):
@@ -68,8 +74,10 @@ class TestSearchFunctions(unittest.TestCase):
             }
         ]
         result = get_address_coordinates("Test Address")
+        print("Actual result get_address_coordinates:", result)
         # Make sure the correct coordinates are returned
-        assert result == [57.69168362481461, 11.95719433068511]
+        assert result["lat"] == 57.69168362481461
+        assert result["lon"] == 11.95719433068511
 
     @patch("homeassistant.components.open_street_map.search.search_address")
     def test_get_address_coordinates_fail(self, mock_search):
