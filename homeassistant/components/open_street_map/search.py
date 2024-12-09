@@ -1,6 +1,7 @@
 """Module to search for addresses or coordinates using the OpenStreetMap API."""
 
 import requests
+from homeassistant.const import __version__
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse?lat=%d&lon=%d"
@@ -67,9 +68,10 @@ def get_click_query(coordinates: dict[str, float]):
     """
     # "lat": coordinates["lat"],"lon": coordinates["lon"] ,
     params = {"extratags": 1,"format": "json", "zoom": 18, "addressdetails": 1}
+    headers = {"User-Agent": f"HomeAssistant/{__version__}"}
+
     try:
-        response = requests.get((NOMINATIM_REVERSE_URL % (coordinates["lat"], coordinates["lon"])), params=params, timeout=5)
-        print(response.text)
+        response = requests.get((NOMINATIM_REVERSE_URL % (coordinates["lat"], coordinates["lon"])), params=params, timeout=5, headers=headers)
         return response.json()
     except requests.exceptions.Timeout:
         return {"error": "Request timed out"}

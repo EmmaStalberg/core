@@ -130,7 +130,7 @@ class TestSearchFunctions(unittest.TestCase):
                     "osm_id": 280940520,
                     "lat": "-34.440723129053",
                     "lon": "-58.70516228096825",
-                    "category": "highway",
+                    "class": "highway",
                     "type": "motorway",
                     "place_rank": 26,
                     "importance": 0.0533815236133364,
@@ -169,11 +169,31 @@ class TestSearchFunctions(unittest.TestCase):
 
         mock_get.return_value = type("MockResponse", (object,), mock_response)
         # Call the function and check the result
-        result = get_click_query({"lon": 123.123123, "lat": 123.123123})
+        result = get_click_query({"lon": -58.70516228096825, "lat": -34.440723129053})
         assert isinstance(result, dict)
         assert "place_id" in result
+        assert "name" in result
         assert "display_name" in result
         assert "address" in result
+        assert "class" in result
+        assert "type" in result
+
+    ##lös neråt
+    @patch("homeassistant.components.open_street_map.search.requests.get")
+    def test_get_click_query_timeout(self, mock_get):
+        """Tests the time out of search function."""
+        # Stimulate a timeout error
+        mock_get.side_effect = requests.exceptions.Timeout
+        result = get_click_query({"lon": -58.70516228096825, "lat": -34.440723129053})
+        assert result == {"error": "Request timed out"}
+
+    @patch("homeassistant.components.open_street_map.search.requests.get")
+    def test_get_click_query_failure(self, mock_get):
+        """Tests the failure of search function."""
+        # Simulate a request failure
+        mock_get.side_effect = requests.exceptions.RequestException("Mock failure")
+        result = get_click_query({"lon": -58.70516228096825, "lat": -34.440723129053})
+        assert result == {"error": "Request failed: Mock failure"}
 
 if __name__ == "__main__":
     unittest.main()
