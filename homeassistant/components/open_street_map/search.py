@@ -55,4 +55,6 @@ def get_address_coordinates(query: str):
     if "error" in json_response:
         return {"error": json_response["error"]}
 
+    print("coords form search ", json_response)  # noqa: T201
+
     return get_Coordinates(json_response)
