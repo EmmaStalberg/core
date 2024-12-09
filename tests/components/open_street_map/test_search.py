@@ -5,8 +5,9 @@ from unittest.mock import patch
 
 import requests
 
-from homeassistant.components.open_street_map import (
+from homeassistant.components.open_street_map.search import (
     get_address_coordinates,
+    get_click_query,
     get_Coordinates,
     search_address,
 )
@@ -115,6 +116,64 @@ class TestSearchFunctions(unittest.TestCase):
         # Make sure the error message is returned
         assert result == {"error": "Request failed"}
 
+    @patch("homeassistant.components.open_street_map.search.search_address")
+    def test_get_click_query(self, mock_get):
+        """Test the click query functionality."""
+
+        mock_response = {
+            "status_code": 200,
+            "json": lambda: [
+                {
+                    "place_id": 16281533,
+                    "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+                    "osm_type": "way",
+                    "osm_id": 280940520,
+                    "lat": "-34.440723129053",
+                    "lon": "-58.70516228096825",
+                    "category": "highway",
+                    "type": "motorway",
+                    "place_rank": 26,
+                    "importance": 0.0533815236133364,
+                    "addresstype": "road",
+                    "name": "Autopista Pedro Eugenio Aramburu",
+                    "display_name": "Autopista Pedro Eugenio Aramburu, El Triángulo, Partido de Malvinas Argentinas, Buenos Aires, B1619AGS, Argentina",
+                    "address": {
+                        "road": "Autopista Pedro Eugenio Aramburu",
+                        "village": "El Triángulo",
+                        "state_district": "Partido de Malvinas Argentinas",
+                        "state": "Buenos Aires",
+                        "ISO3166-2-lvl4": "AR-B",
+                        "postcode": "B1619AGS",
+                        "country": "Argentina",
+                        "country_code": "ar"
+                    },
+                    "extratags": {
+                        "lanes": "3",
+                        "oneway": "yes",
+                        "surface": "asphalt",
+                        "source:ref": "http://forum.openstreetmap.org/viewtopic.php?id=31749",
+                        "source:name": "http://infoleg.mecon.gov.ar/infolegInternet/anexos/225000-229999/225220/norma.htm",
+                        "maxspeed:lanes": "130|100|90",
+                        "minspeed:lanes": "60|60|60"
+                    },
+                    "boundingbox": [
+                        "-34.4415900",
+                        "-34.4370994",
+                        "-58.7086067",
+                        "-58.7044712"
+                    ]
+                }
+            ],
+        }
+        ## Mock response comes from nominatim documentation
+
+        mock_get.return_value = type("MockResponse", (object,), mock_response)
+        # Call the function and check the result
+        result = get_click_query({"lon": 123.123123, "lat": 123.123123})
+        assert isinstance(result, dict)
+        assert "place_id" in result
+        assert "display_name" in result
+        assert "address" in result
 
 if __name__ == "__main__":
     unittest.main()

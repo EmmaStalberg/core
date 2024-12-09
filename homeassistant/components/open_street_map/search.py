@@ -3,7 +3,7 @@
 import requests
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
+NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse?lat=%d&lon=%d"
 
 
 # Search for an address using OpenStreetMap's Nominatim API
@@ -65,10 +65,12 @@ def get_click_query(coordinates: dict[str, float]):
         coordinates (dict[str, float]): a dict representing the coordinates of where was clicked
 
     """
-    params = {"lat": coordinates["lat"],"lon": coordinates["lon"] , "extratags": 1,"format": "jsonv2"}
+    # "lat": coordinates["lat"],"lon": coordinates["lon"] ,
+    params = {"extratags": 1,"format": "json", "zoom": 18, "addressdetails": 1}
     try:
-        response = requests.get(NOMINATIM_REVERSE_URL, params=params, timeout=5)
-        return response.json()  # Return parsed JSON response
+        response = requests.get((NOMINATIM_REVERSE_URL % (coordinates["lat"], coordinates["lon"])), params=params, timeout=5)
+        print(response.text)
+        return response.json()
     except requests.exceptions.Timeout:
         return {"error": "Request timed out"}
     except requests.exceptions.RequestException as error:

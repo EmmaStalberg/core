@@ -8,6 +8,7 @@ from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
+
 class TestSearchFunctions(unittest.TestCase):
     """Class for tests regarding the config_flow."""
 
