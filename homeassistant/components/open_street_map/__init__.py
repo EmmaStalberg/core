@@ -50,7 +50,7 @@ from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.typing import ConfigType
 
 # from homeassistant.util.json import JsonValueType
-from .const import DOMAIN, DOMAIN_DATA
+from .const import DOMAIN, DOMAIN_DATA, OpenStreetMapEntityFeature
 
 # from .osm_client import OpenStreetMapAuthError, OpenStreetMapClient, OpenStreetMapError
 from .search import get_address_coordinates  # , search_address
@@ -69,7 +69,9 @@ GET_ADDRESS_COORDINATES_SERVICE = "get_address_coordinates"
 SEARCH_SCHEMA = vol.Schema({vol.Required("query"): str})
 GET_ADDRESS_COORDINATES_SCHEMA = vol.Schema({vol.Required("query"): str})
 
-WEBSOCKET_EVENT_SCHEMA = vol.Schema({vol.Required("query"): str})  ## ???
+GET_COORDINATES_EVENT_SCHEMA = vol.All(
+    cv.make_entity_service_schema({vol.Required("query"): str})
+)  ## ???
 
 
 def _empty_as_none(value: str | None) -> str | None:
@@ -99,7 +101,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         GET_ADDRESS_COORDINATES_SERVICE,
         GET_ADDRESS_COORDINATES_SCHEMA,
         async_handle_get_address_coordinates,
-        supports_response=SupportsResponse.ONLY,
+        required_features=[OpenStreetMapEntityFeature.GET_COORDINATES_EVENT],
+        supports_response=SupportsResponse.OPTIONAL,
     )
     await component.async_setup(config)
     return True
@@ -131,6 +134,7 @@ class OpenStreetMapEntity(Entity):
         """Initialize osm entity."""
         self._query = query
         self._latestSearchedCoordinates: list[float] | None = None
+        self._unique_id = f"{DOMAIN}_{query}"
         self._state: str | None = (
             None  # this is the coordinates that were searched latest???
         )
@@ -247,7 +251,7 @@ class OpenStreetMapView(http.HomeAssistantView):
     {
         vol.Required("type"): "open_street_map/async_get_address_coordinates",
         vol.Required("entity_id"): cv.entity_id,
-        "event": WEBSOCKET_EVENT_SCHEMA,
+        "event": GET_COORDINATES_EVENT_SCHEMA,
     }
 )
 @websocket_api.async_response
@@ -263,13 +267,19 @@ async def async_handle_get_address_coordinates(
     query = msg.get("query")
     if not query:
         _LOGGER.error("No query provided")
-        return {"error": "No query provided"}
+        return  # {"error": "No query provided"}
 
     coordinates = get_address_coordinates(query)
+    _LOGGER.info("coordinates fetched in init 269")
+    if not coordinates:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Coordinates not found"
+        )
+        return
 
-    connection.send_result(msg["id"], {"results": coordinates})
+    connection.send_result(msg["id"], {"coordinates": coordinates})
     # ??? return None tror jag inte
-    return coordinates
+    # return coordinates
 
 
 ###################################################################
