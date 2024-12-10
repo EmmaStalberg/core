@@ -217,7 +217,9 @@ async def async_handle_get_address_coordinates(
     connection.send_result(msg["id"], {"results": coordinates})
     return None
 
-async def async_handle_get_click_query(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg):
+
+async def async_handle_get_click_query(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
+):
     """Empty for time being."""
     ##TODO we need to decide how the connection will work first.
-

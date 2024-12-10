@@ -8,7 +8,6 @@ from custom_components.open_street_map.search import (
     get_Coordinates,
     search_address,
 )
-
 import requests
 
 

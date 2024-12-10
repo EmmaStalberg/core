@@ -145,7 +145,7 @@ class TestSearchFunctions(unittest.TestCase):
                         "ISO3166-2-lvl4": "AR-B",
                         "postcode": "B1619AGS",
                         "country": "Argentina",
-                        "country_code": "ar"
+                        "country_code": "ar",
                     },
                     "extratags": {
                         "lanes": "3",
@@ -154,14 +154,14 @@ class TestSearchFunctions(unittest.TestCase):
                         "source:ref": "http://forum.openstreetmap.org/viewtopic.php?id=31749",
                         "source:name": "http://infoleg.mecon.gov.ar/infolegInternet/anexos/225000-229999/225220/norma.htm",
                         "maxspeed:lanes": "130|100|90",
-                        "minspeed:lanes": "60|60|60"
+                        "minspeed:lanes": "60|60|60",
                     },
                     "boundingbox": [
                         "-34.4415900",
                         "-34.4370994",
                         "-58.7086067",
-                        "-58.7044712"
-                    ]
+                        "-58.7044712",
+                    ],
                 }
             ],
         }
@@ -194,6 +194,7 @@ class TestSearchFunctions(unittest.TestCase):
         mock_get.side_effect = requests.exceptions.RequestException("Mock failure")
         result = get_click_query({"lon": -58.70516228096825, "lat": -34.440723129053})
         assert result == {"error": "Request failed: Mock failure"}
+
 
 if __name__ == "__main__":
     unittest.main()

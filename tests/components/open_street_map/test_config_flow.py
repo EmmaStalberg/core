@@ -1,4 +1,5 @@
 """Tests for config_flow.py."""
+
 """Tests for the Open street maps config flow."""
 
 import unittest
@@ -28,6 +29,7 @@ class TestSearchFunctions(unittest.TestCase):
         )
 
         assert result2.get("type") is FlowResultType.CREATE_ENTRY
+
 
 if __name__ == "__main__":
     unittest.main()

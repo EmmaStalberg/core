@@ -3,14 +3,6 @@
 from datetime import timedelta
 import logging
 
-import pytest
-
-from homeassistant.components import websocket_api
-from homeassistant.components.open_street_map.search import (
-    get_address_coordinates,
-    get_Coordinates,
-    search_address,
-)
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 
@@ -22,7 +14,9 @@ INTERVAL = timedelta(minutes=5)
 async def test_setup(hass: HomeAssistant) -> None:
     """Test setup works."""
 
-    result = await async_setup_component(hass, DOMAIN, {"open_street_map": {"domain": DOMAIN}})
+    result = await async_setup_component(
+        hass, DOMAIN, {"open_street_map": {"domain": DOMAIN}}
+    )
 
     await hass.async_block_till_done()
 
@@ -41,6 +35,7 @@ async def test_handle_search(hass: HomeAssistant) -> None:
     """Test the handle_search function."""
 
     assert True
+
 
 async def test_handle_get_address_coordinates(hass: HomeAssistant) -> None:
     """Test the handle_get_address_coordinates funciton."""
