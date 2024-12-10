@@ -1,10 +1,10 @@
-"""Module to search for addresses or coordinates using the OpenStreetMap API."""
+"""Module to search for routes as well as restaurants along that route."""
 
 import requests
 
 PROJECT_OSRM_URL = "http://router.project-osrm.org/route/v1/driving/%d,%d;%d,%d?"
 OVERPASS_URL = 'https://overpass-api.de/api/interpreter?data=[out:json];node["amenity"="restaurant"](around:500,%d,%d);out;'
-NOMINATIM_URL = "https://nominatim.openstreetmap.org/lookup"
+NOMINATIM_LOOKUP_URL = "https://nominatim.openstreetmap.org/lookup"
 
 def fetch_route(start_coordinates : dict[str, float], end_coordinates : dict[str, float]):
     '''Find route between two coordinates.'''
@@ -58,7 +58,7 @@ def get_details_restaurant(restaurants):
     }
     try:
         response = requests.get(
-                (NOMINATIM_URL + node_ids_string),
+                (NOMINATIM_LOOKUP_URL + node_ids_string),
                 params=params,
                 timeout=5
             )

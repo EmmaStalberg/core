@@ -4,7 +4,7 @@ import requests
 
 from homeassistant.const import __version__
 
-NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search"
 NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse?lat=%d&lon=%d"
 
 
@@ -21,7 +21,7 @@ def search_address(query: str):
     """
     params = {"q": query, "format": "json"}
     try:
-        response = requests.get(NOMINATIM_URL, params=params, timeout=5)
+        response = requests.get(NOMINATIM_SEARCH_URL, params=params, timeout=5)
         # response.raise_for_status()  # Raise HTTPError for bad responses
         return response.json()  # Return parsed JSON response
     except requests.exceptions.Timeout:
