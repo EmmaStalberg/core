@@ -4,7 +4,7 @@ import requests
 
 PROJECT_OSRM_URL = "http://router.project-osrm.org/route/v1/driving/%d,%d;%d,%d?"
 OVERPASS_URL = 'https://overpass-api.de/api/interpreter?data=[out:json];node["amenity"="restaurant"](around:500,%d,%d);out;'
-
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/lookup"
 
 def fetch_route(start_coordinates : dict[str, float], end_coordinates : dict[str, float]):
     '''Find route between two coordinates.'''
@@ -23,8 +23,8 @@ def fetch_route(start_coordinates : dict[str, float], end_coordinates : dict[str
     except requests.exceptions.RequestException as error:
         return {"error": f"Request failed: {error}"}
 
-    if result.routes and result.routes.length>0:
-        return result.routes[0].geometry
+    if result["routes"] and len(result["routes"])>0:
+        return result["routes"][0]
 
     return {"error": "No route found"}
 
@@ -37,7 +37,32 @@ def find_restaurants_near(coordinates : dict[str, float], count : int):
                 timeout=5
             )
         result = response.json()
-        return result.elements.slice(0, count)
+        return get_details_restaurant(result["elements"].slice(0,count))
+    except requests.exceptions.Timeout:
+        return {"error": "Request timed out"}
+    except requests.exceptions.RequestException as error:
+        return {"error": f"Request failed: {error}"}
+
+def get_details_restaurant(restaurants):
+    """Attain extra details on the restaurants found."""
+
+    node_ids_string = "?osm_ids="
+    for restaurant in restaurants:
+        node_ids_string += "N" + str(restaurant["id"])
+
+    params = {
+        "format" : "jsonv2",
+        "addressdetails" : 1,
+        "extratags" : 1,
+        "namedetails" : 1
+    }
+    try:
+        response = requests.get(
+                (NOMINATIM_URL + node_ids_string),
+                params=params,
+                timeout=5
+            )
+        return response.json()
     except requests.exceptions.Timeout:
         return {"error": "Request timed out"}
     except requests.exceptions.RequestException as error:
