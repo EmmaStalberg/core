@@ -60,10 +60,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the OpenStreetMap integration."""
-    _LOGGER.log("[OSM]Home Assistant connected")
-    component = hass.data[DOMAIN_DATA] = EntityComponent[OSMEntity][
-        _LOGGER, DOMAIN, hass, SCAN_INTERVAL
-    ]
+    _LOGGER.info("[OSM]Home Assistant connected")
+    component = hass.data[DOMAIN_DATA] = EntityComponent(_LOGGER, DOMAIN, hass)
+    component.scan_interval = SCAN_INTERVAL
 
     frontend.async_register_built_in_panel(
         hass, "openstreetmap", "OpenStreetMap", "mdi:map"
@@ -74,7 +73,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         "search",
         vol.Schema({vol.Required("query"): cv.string}),
         _async_search_event,
-        [OSMEntityFeature.LOCATION_SEARCH],
     )
 
     await component.async_setup(config)
