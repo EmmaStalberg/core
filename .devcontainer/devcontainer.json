@@ -56,8 +56,5 @@
         }
       }
     }
-  },
-  "mounts": [
-    "source=/Users/luojinxia/Local/School_lecture/DAt266/assignment_final/frontend,target=/workspaces/frontend,type=bind,consistency=cached"
-  ]
+  }
 }

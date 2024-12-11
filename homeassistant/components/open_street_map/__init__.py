@@ -60,7 +60,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the OpenStreetMap integration."""
-    _LOGGER.log("[OSM]Home Assistant connected.")
+    _LOGGER.log("[OSM]Home Assistant connected")
     component = hass.data[DOMAIN_DATA] = EntityComponent[OSMEntity][
         _LOGGER, DOMAIN, hass, SCAN_INTERVAL
     ]
