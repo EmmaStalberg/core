@@ -69,9 +69,9 @@ GET_ADDRESS_COORDINATES_SERVICE = "get_address_coordinates"
 SEARCH_SCHEMA = vol.Schema({vol.Required("query"): str})
 GET_ADDRESS_COORDINATES_SCHEMA = vol.Schema({vol.Required("query"): str})
 
-GET_COORDINATES_EVENT_SCHEMA = vol.All(
-    cv.make_entity_service_schema({vol.Required("query"): str})
-)  ## ???
+# GET_COORDINATES_EVENT_SCHEMA = vol.All(
+#     cv.make_entity_service_schema({vol.Required("query"): str})
+# )  ## ???
 
 
 def _empty_as_none(value: str | None) -> str | None:
@@ -134,7 +134,6 @@ class OpenStreetMapEntity(Entity):
         """Initialize osm entity."""
         self._query = query
         self._latestSearchedCoordinates: list[float] | None = None
-        self._unique_id = f"{DOMAIN}_{query}"
         self._state: str | None = (
             None  # this is the coordinates that were searched latest???
         )
@@ -250,8 +249,10 @@ class OpenStreetMapView(http.HomeAssistantView):
 @websocket_api.websocket_command(
     {
         vol.Required("type"): "open_street_map/async_get_address_coordinates",
-        vol.Required("entity_id"): cv.entity_id,
-        "event": GET_COORDINATES_EVENT_SCHEMA,
+        vol.Required("entry_id"): str,
+        # vol.Required("entity_id"): cv.entity_id,
+        # "event": GET_COORDINATES_EVENT_SCHEMA,
+        vol.Required("query"): str,
     }
 )
 @websocket_api.async_response
@@ -262,6 +263,9 @@ async def async_handle_get_address_coordinates(
     # if not (entity := hass.data[DOMAIN_DATA].get_entity(msg["entity_id"])):
     #     connection.send_error(msg["id"], ERR_NOT_FOUND, "Entity not found")
     #     return None
+    config = hass.config_entries.async_get_entry(msg["entry_id"])
+    if config is None:
+        return
 
     # ska den kalla på entity.nån metod???
     query = msg.get("query")
@@ -270,14 +274,20 @@ async def async_handle_get_address_coordinates(
         return  # {"error": "No query provided"}
 
     coordinates = get_address_coordinates(query)
-    _LOGGER.info("coordinates fetched in init 269")
+    _LOGGER.info("Coordinates fetched in init 269")
     if not coordinates:
         connection.send_error(
             msg["id"], websocket_api.ERR_NOT_FOUND, "Coordinates not found"
         )
         return
 
-    connection.send_result(msg["id"], {"coordinates": coordinates})
+    hass.config_entries.async_update_entry(
+        config, data={**config.data, "coordinates": coordinates}
+    )
+
+    connection.send_result(msg["id"], config)
+
+    # connection.send_result(msg["id"], {"coordinates": coordinates})
     # ??? return None tror jag inte
     # return coordinates
 
@@ -305,14 +315,14 @@ async def async_handle_get_address_coordinates(
 #     return True
 
 
-# # TODO uncomment this code and fix the todos. Note! Need to uncomment the imports as well
-# # TODO Update entry annotation
+# TODO uncomment this code and fix the todos. Note! Need to uncomment the imports as well # pylint: disable=fixme
+# TODO Update entry annotation # pylint: disable=fixme
 # async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 #     """Set up OpenStreetMap from a config entry."""
 
-#     # TODO 1. Create API instance
-#     # TODO 2. Validate the API connection (and authentication)
-#     # TODO 3. Store an API object for your platforms to access
+#     # TODO 1. Create API instance # pylint: disable=fixme
+#     # TODO 2. Validate the API connection (and authentication) # pylint: disable=fixme
+#     # TODO 3. Store an API object for your platforms to access # pylint: disable=fixme
 #     # entry.runtime_data = MyAPI(...)
 
 #     # Home Assistant's shared session
