@@ -1,6 +1,6 @@
 ## OpenStreetMap Integration for Home Assistant
 
-Enhance your Home Assistant experience with the OpenStreetMap (OSM) integration. This component provides basic map features, allowing users to view maps, search for locations, and change map layers, using OpenStreetMap's open-source data.
+Enhance your Home Assistant experience with the OpenStreetMap (OSM) integration. This component provides basic map features, allowing users to view maps, search for locations, and change map layers, etc, using OpenStreetMap's open-source data.
 
 
 ## Where to Find the Component
