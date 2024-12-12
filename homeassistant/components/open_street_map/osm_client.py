@@ -1,3 +1,5 @@
+"""Open_street_map client."""
+
 from typing import Any
 
 import aiohttp
@@ -66,6 +68,6 @@ class OpenStreetMapClient:
         try:
             latitude = float(results[0]["lat"])
             longitude = float(results[0]["lon"])
-            return {"latitude": latitude, "longitude": longitude}
+            return {"latitude": latitude, "longitude": longitude}  # noqa: TRY300
         except (IndexError, KeyError, ValueError):
             return {"error": "Invalid response from API"}
