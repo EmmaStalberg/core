@@ -1,0 +1,12 @@
+{
+  "entity_component": {
+    "_": {
+      "default": "mdi:map"
+    }
+  },
+  "services": {
+    "get_address_coordinates": {
+      "service": "mdi:magnify"
+    }
+  }
+}
