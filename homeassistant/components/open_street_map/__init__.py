@@ -226,9 +226,6 @@ class OpenStreetMapView(http.HomeAssistantView):
         return self.json([{"lat": lat, "lon": lon}])
 
 
-"""Defines a WebSocket command for retrieving address coordinates using OpenStreetMap."""
-
-
 @websocket_api.websocket_command(
     {
         vol.Required("type"): "open_street_map/async_get_address_coordinates",
