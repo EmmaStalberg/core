@@ -144,4 +144,3 @@ async def async_pipeline_from_audio_stream(
     )
     await pipeline_input.validate()
     await pipeline_input.execute()
-

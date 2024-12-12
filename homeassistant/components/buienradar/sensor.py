@@ -33,7 +33,6 @@ from homeassistant.const import (
     ATTR_ATTRIBUTION,
     CONF_LATITUDE,
     CONF_LONGITUDE,
-    CONF_NAME,
     DEGREE,
     PERCENTAGE,
     Platform,
@@ -95,19 +94,19 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key="barometerfc",
         translation_key="barometerfc",
-        icon= MDI_GAUGE,
+        icon=MDI_GAUGE,
     ),
     # new in json api (>1.0.0):
     SensorEntityDescription(
         key="barometerfcname",
         translation_key="barometerfcname",
-        icon= MDI_GAUGE,
+        icon=MDI_GAUGE,
     ),
     # new in json api (>1.0.0):
     SensorEntityDescription(
         key="barometerfcnamenl",
         translation_key="barometerfcnamenl",
-        icon= MDI_GAUGE,
+        icon=MDI_GAUGE,
     ),
     SensorEntityDescription(
         key="condition",
@@ -172,24 +171,24 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
         key="windforce",
         translation_key="windforce",
         native_unit_of_measurement="Bft",
-        icon= MDI_WEATHER_WINDY,
+        icon=MDI_WEATHER_WINDY,
     ),
     SensorEntityDescription(
         key="winddirection",
         translation_key="winddirection",
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="windazimuth",
         translation_key="windazimuth",
         native_unit_of_measurement=DEGREE,
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="pressure",
         device_class=SensorDeviceClass.PRESSURE,
         native_unit_of_measurement=UnitOfPressure.HPA,
-        icon= MDI_GAUGE,
+        icon=MDI_GAUGE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
     SensorEntityDescription(
@@ -399,91 +398,91 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
         key="rainchance_1d",
         translation_key="rainchance_1d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_POURING,
+        icon=MDI_WEATHER_POURING,
     ),
     SensorEntityDescription(
         key="rainchance_2d",
         translation_key="rainchance_2d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_POURING,
+        icon=MDI_WEATHER_POURING,
     ),
     SensorEntityDescription(
         key="rainchance_3d",
         translation_key="rainchance_3d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_POURING,
+        icon=MDI_WEATHER_POURING,
     ),
     SensorEntityDescription(
         key="rainchance_4d",
         translation_key="rainchance_4d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_POURING,
+        icon=MDI_WEATHER_POURING,
     ),
     SensorEntityDescription(
         key="rainchance_5d",
         translation_key="rainchance_5d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_POURING,
+        icon=MDI_WEATHER_POURING,
     ),
     SensorEntityDescription(
         key="sunchance_1d",
         translation_key="sunchance_1d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_PARTLY_CLOUDY,
+        icon=MDI_WEATHER_PARTLY_CLOUDY,
     ),
     SensorEntityDescription(
         key="sunchance_2d",
         translation_key="sunchance_2d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_PARTLY_CLOUDY,
+        icon=MDI_WEATHER_PARTLY_CLOUDY,
     ),
     SensorEntityDescription(
         key="sunchance_3d",
         translation_key="sunchance_3d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_PARTLY_CLOUDY,
+        icon=MDI_WEATHER_PARTLY_CLOUDY,
     ),
     SensorEntityDescription(
         key="sunchance_4d",
         translation_key="sunchance_4d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_PARTLY_CLOUDY,
+        icon=MDI_WEATHER_PARTLY_CLOUDY,
     ),
     SensorEntityDescription(
         key="sunchance_5d",
         translation_key="sunchance_5d",
         native_unit_of_measurement=PERCENTAGE,
-        icon= MDI_WEATHER_PARTLY_CLOUDY,
+        icon=MDI_WEATHER_PARTLY_CLOUDY,
     ),
     SensorEntityDescription(
         key="windforce_1d",
         translation_key="windforce_1d",
         native_unit_of_measurement="Bft",
-        icon= MDI_WEATHER_WINDY,
+        icon=MDI_WEATHER_WINDY,
     ),
     SensorEntityDescription(
         key="windforce_2d",
         translation_key="windforce_2d",
         native_unit_of_measurement="Bft",
-        icon= MDI_WEATHER_WINDY,
+        icon=MDI_WEATHER_WINDY,
     ),
     SensorEntityDescription(
         key="windforce_3d",
         translation_key="windforce_3d",
         native_unit_of_measurement="Bft",
-        icon= MDI_WEATHER_WINDY,
+        icon=MDI_WEATHER_WINDY,
     ),
     SensorEntityDescription(
         key="windforce_4d",
         translation_key="windforce_4d",
         native_unit_of_measurement="Bft",
-        icon= MDI_WEATHER_WINDY,
+        icon=MDI_WEATHER_WINDY,
     ),
     SensorEntityDescription(
         key="windforce_5d",
         translation_key="windforce_5d",
         native_unit_of_measurement="Bft",
-        icon= MDI_WEATHER_WINDY,
+        icon=MDI_WEATHER_WINDY,
     ),
     SensorEntityDescription(
         key="windspeed_1d",
@@ -518,57 +517,57 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key="winddirection_1d",
         translation_key="winddirection_1d",
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="winddirection_2d",
         translation_key="winddirection_2d",
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="winddirection_3d",
         translation_key="winddirection_3d",
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="winddirection_4d",
         translation_key="winddirection_4d",
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="winddirection_5d",
         translation_key="winddirection_5d",
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="windazimuth_1d",
         translation_key="windazimuth_1d",
         native_unit_of_measurement=DEGREE,
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="windazimuth_2d",
         translation_key="windazimuth_2d",
         native_unit_of_measurement=DEGREE,
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="windazimuth_3d",
         translation_key="windazimuth_3d",
         native_unit_of_measurement=DEGREE,
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="windazimuth_4d",
         translation_key="windazimuth_4d",
         native_unit_of_measurement=DEGREE,
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="windazimuth_5d",
         translation_key="windazimuth_5d",
         native_unit_of_measurement=DEGREE,
-        icon= MDI_COMPASS_OUTLINE,
+        icon=MDI_COMPASS_OUTLINE,
     ),
     SensorEntityDescription(
         key="condition_1d",
@@ -704,6 +703,7 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
 
 WARNING_NO_FORCAST = "No forecast for fcday=%s"
 
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
@@ -731,10 +731,7 @@ async def async_setup_entry(
     )
 
     # create weather entities:
-    entities = [
-        BrSensor(coordinates, description)
-        for description in SENSOR_TYPES
-    ]
+    entities = [BrSensor(coordinates, description) for description in SENSOR_TYPES]
 
     # create weather data:
     data = BrData(hass, coordinates, timeframe, entities)
@@ -751,9 +748,7 @@ class BrSensor(SensorEntity):
     _attr_should_poll = False
     _attr_has_entity_name = True
 
-    def __init__(
-        self, coordinates, description: SensorEntityDescription
-    ) -> None:
+    def __init__(self, coordinates, description: SensorEntityDescription) -> None:
         """Initialize the sensor."""
         self.entity_description = description
         self._measured = None
@@ -769,9 +764,9 @@ class BrSensor(SensorEntity):
 
         if description.key.startswith(PRECIPITATION_FORECAST):
             self._timeframe = None
-        
+
         self._attr_entity_picture = None
-        self._attr_extra_state_attributes = None
+        self._attr_extra_state_attributes = {}
 
     @callback
     def data_updated(self, data: BrData):
@@ -806,9 +801,9 @@ class BrSensor(SensorEntity):
 
         if sensor_type == VISIBILITY:
             return self._update_visibality(sensor_type, data)
- 
+
         return self._update_generic_sensor(sensor_type, data)
-    
+
     def _update_forcasting_sensors(self, sensor_type, data):
         # update forecasting sensors:
         fcday = self._get_fcday(sensor_type)
@@ -827,14 +822,14 @@ class BrSensor(SensorEntity):
 
         # update all other sensors
         return self._update_generic_forecast_sensor(sensor_type, data, fcday)
-    
+
     def _update_weather_sensors(self, sensor_type, data):
         sensor_type_mapping = {
-            SYMBOL: EXACTNL, 
+            SYMBOL: EXACTNL,
             CONDITION: CONDITION,
             "conditioncode": CONDCODE,
             "conditiondetailed": DETAILED,
-            "conditionexact": EXACT
+            "conditionexact": EXACT,
         }
         if condition := data.get(CONDITION):
             new_state = condition.get(sensor_type_mapping.get(sensor_type))
@@ -842,60 +837,60 @@ class BrSensor(SensorEntity):
             if new_state != self.state or img != self.entity_picture:
                 self._attr_native_value = new_state
                 self._attr_entity_picture = img
-                return True      
+                return True
         return False
-    
+
     def _update_precipitation_forecast_sensors(self, sensor_type, data):
         # update nested precipitation forecast sensors
         nested = data.get(PRECIPITATION_FORECAST)
         self._timeframe = nested.get(TIMEFRAME)
-        self._attr_native_value = nested.get(sensor_type[len(PRECIPITATION_FORECAST) + 1 :])
+        self._attr_native_value = nested.get(
+            sensor_type[len(PRECIPITATION_FORECAST) + 1 :]
+        )
         result = {ATTR_ATTRIBUTION: data.get(ATTRIBUTION)}
         if self._timeframe is not None:
             result[TIMEFRAME_LABEL] = f"{self._timeframe} min"
         self._attr_extra_state_attributes = result
         return True
-    
+
     def _update_wind_sensors(self, sensor_type, data):
         # hass wants windspeeds in km/h not m/s, so convert:
         self._attr_native_value = data.get(sensor_type)
         if self.state is not None:
             self._attr_native_value = round(data.get(sensor_type) * 3.6, 1)
         return True
-    
+
     def _update_visibality(self, sensor_type, data):
         # hass wants visibility in km (not m), so convert:
         self._attr_native_value = data.get(sensor_type)
         if self.state is not None:
             self._attr_native_value = round(self.state / 1000, 1)
         return True
-    
+
     def _update_generic_sensor(self, sensor_type, data):
         self._attr_native_value = data.get(sensor_type)
-        result = { 
+        result = {
             ATTR_ATTRIBUTION: data.get(ATTRIBUTION),
             STATIONNAME_LABEL: data.get(STATIONNAME),
         }
         if self._measured is not None:
             local_dt = dt_util.as_local(self._measured)
             result[MEASURED_LABEL] = local_dt.strftime("%c")
-            
+
         self._attr_extra_state_attributes = result
         return True
 
-    
     def _get_fcday(self, sensor_type):
-        suffix_to_fcday = { "_2d": 1, "_3d": 2, "_4d": 3, "_5d": 4}
-        fcday = suffix_to_fcday.get(sensor_type[-3:], 0)
-        return fcday
-    
+        suffix_to_fcday = {"_2d": 1, "_3d": 2, "_4d": 3, "_5d": 4}
+        return suffix_to_fcday.get(sensor_type[-3:], 0)
+
     def _get_new_status_from_condition(self, sensor_type, condition):
         condition_mapping = {
             SYMBOL: EXACTNL,
             CONDITION: CONDITION,
             "conditioncode": CONDCODE,
             "conditiondetailed": DETAILED,
-            "conditionexact": EXACT
+            "conditionexact": EXACT,
         }
 
         new_state = condition.get(CONDITION)
@@ -903,9 +898,9 @@ class BrSensor(SensorEntity):
             if sensor_type.startswith(key):
                 new_state = condition.get(value)
                 break
-        
+
         return new_state
-    
+
     def _update_condition_based_sensor(self, sensor_type, condition):
         # update weather symbol & status text
         if not condition:
@@ -919,9 +914,9 @@ class BrSensor(SensorEntity):
             self._attr_native_value = new_state
             self._attr_entity_picture = img
             return True
-            
+
         return False
-    
+
     def _update_windspeeds_forcast(self, sensor_type, data, fcday):
         # hass wants windspeeds in km/h not m/s, so convert:
         try:
@@ -932,9 +927,9 @@ class BrSensor(SensorEntity):
 
         if self.state is not None:
             self._attr_native_value = round(self.state * 3.6, 1)
-                
+
         return True
-    
+
     def _update_generic_forecast_sensor(self, sensor_type, data, fcday):
         try:
             self._attr_native_value = data.get(FORECAST)[fcday].get(sensor_type[:-3])
