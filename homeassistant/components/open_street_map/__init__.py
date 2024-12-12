@@ -2,251 +2,275 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from http import HTTPStatus
+import logging
 from typing import Any
 
+from aiohttp import web
 import voluptuous as vol
 
-# from homeassistant import config_entries
-# from homeassistant.config_entries import ConfigEntry
-from homeassistant.components import frontend, websocket_api
+from homeassistant.components import frontend, http, websocket_api
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import _LOGGER, HomeAssistant, ServiceCall
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.util.hass_dict import HassKey
 
-# from homeassistant.util.hass_dict import HassKey
-from .const import DOMAIN, OSMEntityFeature
-from .search import (
-    get_address_coordinates,
-    get_Coordinates,
-    # AddressSearchView,
-    search_address,  # imports search function from search.py
-)
+from .const import DOMAIN, DOMAIN_DATA, OpenStreetMapEntityFeature
+from .search import get_address_coordinates
 
-# TODO List the platforms that you want to support. # pylint: disable=fixme
-# For your initial PR, limit it to 1 platform.
-# PLATFORMS: list[Platform] = [Platform.LIGHT]
-PLATFORMS: list[Platform] = []
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+
+_LOGGER = logging.getLogger(__name__)
+ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-# DOMAIN_DATA = "open_street_map_data"
-
-DOMAIN_DATA: HassKey[EntityComponent[OSMEntity]] = HassKey(DOMAIN)
-
-# TODO Create ConfigEntry type alias with API object
-# TODO Rename type alias and update all entry annotations
-# type OpenStreetMapConfigEntry = ConfigEntry[MyApi]  # noqa: F821
-SCAN_INTERVAL = timedelta(seconds=60)
+SEARCH_SERVICE = "search"
+GET_ADDRESS_COORDINATES_SERVICE = "get_address_coordinates"
+SEARCH_SCHEMA = vol.Schema({vol.Required("query"): str})
+GET_ADDRESS_COORDINATES_SCHEMA = vol.Schema({vol.Required("query"): str})
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up from a config entry."""
-    await hass.data[DOMAIN_DATA].async_setup_entry(entry)
-    websocket_api.async_register_command(hass, handle_event_search)
-    return True
-
-
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
-    return await hass.data[DOMAIN_DATA].async_unload_entry(entry)
+def _empty_as_none(value: str | None) -> str | None:
+    """Convert any empty string values to None."""
+    return value or None
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the OpenStreetMap integration."""
-    _LOGGER.info("[OSM]Home Assistant connected")
-    component = hass.data[DOMAIN_DATA] = EntityComponent(_LOGGER, DOMAIN, hass)
-    component.scan_interval = SCAN_INTERVAL
+    """Set up the OpenStreetMap integration for Home Assistant.
+
+    This function initializes the integration by creating the required components,
+    registering HTTP views, frontend panels, WebSocket commands, and custom entity services.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance. It provides access
+            to core Home Assistant features such as HTTP, WebSocket APIs,
+            and entity management.
+        config (ConfigType): A configuration dictionary for the integration,
+            as defined by Home Assistant.
+
+    Returns:
+        bool: True if the integration is successfully set up; otherwise, False.
+
+    """
+    component = hass.data[DOMAIN_DATA] = EntityComponent[OpenStreetMapEntity](
+        _LOGGER, DOMAIN, hass
+    )
+
+    hass.http.register_view(OpenStreetMapView(component))
 
     frontend.async_register_built_in_panel(
-        hass, "openstreetmap", "OpenStreetMap", "mdi:map"
+        hass,
+        component_name="open-street-map",
+        sidebar_title="Open Street Map",
+        sidebar_icon="mdi:map",
     )
-    websocket_api.async_register_command(hass, handle_event_search)
-    hass.states.async_set(f"{DOMAIN}.integration", "loaded")
+
+    websocket_api.async_register_command(hass, async_handle_get_address_coordinates)
+
     component.async_register_entity_service(
-        "search",
-        vol.Schema({vol.Required("query"): cv.string}),
-        _async_search_event,
+        GET_ADDRESS_COORDINATES_SERVICE,
+        GET_ADDRESS_COORDINATES_SCHEMA,
+        async_handle_get_address_coordinates,
+        required_features=[OpenStreetMapEntityFeature.GET_COORDINATES_EVENT],
+        supports_response=SupportsResponse.OPTIONAL,
     )
-
     await component.async_setup(config)
-
-    # Register the search service
-    hass.services.async_register(
-        DOMAIN,
-        "search",
-        async_handle_search,
-        schema=vol.Schema({vol.Required("query"): str}),
-    )
-
-    # # Register the get_coordinates service. Not sure if this is needed
-    # hass.services.async_register(
-    #     DOMAIN,
-    #     "get_coordinates",
-    #     async_handle_get_coordinates,
-    #     schema=cv.make_entity_service_schema({vol.Required("json_data"): cv.Any}),
-    # )
-
-    # # Register the get_address_coordinates service
-    # hass.services.async_register(
-    #     DOMAIN,
-    #     "get_address_coordinates",
-    #     async_handle_get_address_coordinates,
-    #     schema=cv.make_entity_service_schema({vol.Required("query"): str}),
-    # )
     return True
 
 
-async def _async_search_event(entity: OSMEntity, service_call: ServiceCall) -> str:
-    """Service call wrapper to set osm."""
-    return await entity.async_search_event(service_call.data["query"])
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up a configuration entry for the OpenStreetMap integration.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance, providing access to the
+            core features and management of integrations.
+        entry (ConfigEntry): The configuration entry representing the integration's
+            setup data, such as connection details and user preferences.
+
+    Returns:
+        bool: True if the configuration entry is successfully set up; otherwise, False.
+
+    """
+    return await hass.data[DOMAIN_DATA].async_setup_entry(entry)
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a configuration entry for the OpenStreetMap integration.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance, providing access to the
+            core features and management of integrations.
+        entry (ConfigEntry): The configuration entry representing the integration's
+            setup data that is to be unloaded.
+
+    Returns:
+    bool: True if the configuration entry is successfully unloaded; otherwise, False.
+
+    """
+    return await hass.data[DOMAIN_DATA].async_unload_entry(entry)
+
+
+class OpenStreetMapEntity(Entity):
+    """Base class for OpenStreetMap entities in Home Assistant.
+
+    Attributes:
+        _entity_component_unrecorded_attributes (frozenset): A set of attributes
+            that should not be recorded in the state registry.
+        _query (str): The search query used to fetch location data.
+        _latestSearchedCoordinates (list[float] | None): The latest fetched
+            coordinates for the entity.
+        _state (str | None): The current state of the entity, typically its coordinates.
+
+    """
+
+    _entity_component_unrecorded_attributes = frozenset({"description", "coordinates"})
+
+    def __init__(self, query: str) -> None:
+        """Initialize an OpenStreetMap entity.
+
+        Args:
+            query (str): The search query used to retrieve location data
+                from the OpenStreetMap API.
+
+        """
+        self._query = query
+        self._latestSearchedCoordinates: list[float] | None = None
+        self._state: str | None = None
+
+    @property
+    def name(self) -> str:
+        """Return the name of the entity."""
+        return f"{DOMAIN} - {self._query}"
+
+    @property
+    def _unique_id(self) -> str:
+        return f"{DOMAIN}_{self._query}"
+
+    @property
+    def state(self) -> str | None:
+        """Return the state (coordinates) of the entity."""
+        return self._state
+
+    @property
+    def state_attributes(self) -> dict[str, Any] | None:
+        """Return the attributes for the entity (e.g., coordinates, description)."""
+        if self._latestSearchedCoordinates is None:
+            return None
+        return {
+            "coordinates": self._latestSearchedCoordinates,
+            "query": self._query,
+        }
+
+    @property
+    def coordsFromLatestSearch(self) -> list[float] | None:
+        """Returns coordinates from latest search."""
+        return self._latestSearchedCoordinates
+
+    async def async_update(self) -> None:
+        """Fetch the latest data from OpenStreetMap and update the entity's state."""
+        coordinates = await self.fetch_coordinates(self._query)
+        if coordinates:
+            self._latestSearchedCoordinates = coordinates
+            self._state = f"{coordinates[0]},{coordinates[1]}"
+
+    async def fetch_coordinates(self, query: str) -> list[float] | None:
+        """Fetch coordinates for the given query using the OpenStreetMap API."""
+        result = get_address_coordinates(query)  # Call the existing function you have
+        # if isinstance(result, dict) and "error" in result:
+        if "error" in result:
+            return None
+        return result
+
+    async def async_added_to_hass(self) -> None:
+        """Run when the entity is added to Home Assistant."""
+        await self.async_update()
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when the entity is removed from Home Assistant."""
+
+
+class OpenStreetMapView(http.HomeAssistantView):
+    """View to retrieve content for OpenStreetMap.
+
+    Attributes:
+        url (str): The URL path for the OpenStreetMap API endpoint.
+        name (str): The name identifier for the API endpoint.
+        component (EntityComponent[OpenStreetMapEntity]): The entity component that
+            manages OpenStreetMap entities in Home Assistant.
+
+    """
+
+    url = "/api/open_street_map"
+    name = "api:openstreetmap"
+
+    def __init__(self, component: EntityComponent[OpenStreetMapEntity]) -> None:
+        """Initialize the OpenStreetMap view."""
+        self.component = component
+
+    async def get(self, request: web.Request, entity_id: str) -> web.Response:
+        """Return address coordinates."""
+        if not (entity := self.component.get_entity(entity_id)) or not isinstance(
+            entity, OpenStreetMapEntity
+        ):
+            return web.Response(status=HTTPStatus.BAD_REQUEST)
+
+        lat = request.query.get("lat")
+        lon = request.query.get("lon")
+
+        if lat is None or lon is None:
+            return web.Response(status=HTTPStatus.BAD_REQUEST)
+
+        return self.json([{"lat": lat, "lon": lon}])
+
+
+"""Defines a WebSocket command for retrieving address coordinates using OpenStreetMap."""
 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "osm/event/search",
-        vol.Required("entity_id"): cv.entity_domain(DOMAIN),
-        vol.Required("query"): cv.string,
+        vol.Required("type"): "open_street_map/async_get_address_coordinates",
+        vol.Required("entry_id"): str,
+        vol.Required("query"): str,
     }
 )
 @websocket_api.async_response
-async def handle_event_search(
-    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
-) -> None:
-    """Handle search event from websocket."""
-    if not (entity := hass.data[DOMAIN_DATA].get_entity(msg["entity_id"])):
-        connection.send_error(msg["id"], "Entity not found", "Entity not found")
+async def async_handle_get_address_coordinates(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg
+):
+    """Handle getting address coordinates."""
+    config = hass.config_entries.async_get_entry(msg["entry_id"])
+    if config is None:
         return
 
-    try:
-        result = await entity.async_search_event(msg["query"])
-    except HomeAssistantError as ex:
-        connection.send_error(msg["id"], "failed", str(ex))
-    else:
-        connection.send_result(msg["id"], {"result": result})
-
-
-# TODO uncomment this code and fix the todos. Note! Need to uncomment the imports as well
-# # TODO Update entry annotation
-# async def async_setup_entry(
-#     hass: HomeAssistant, entry: OpenStreetMapConfigEntry
-# ) -> bool:
-#     """Set up OpenStreetMap from a config entry."""
-
-#     # TODO 1. Create API instance
-#     # TODO 2. Validate the API connection (and authentication)
-#     # TODO 3. Store an API object for your platforms to access
-#     # entry.runtime_data = MyAPI(...)
-
-#     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-#     return True
-
-
-# # TODO Update entry annotation
-# async def async_unload_entry(
-#     hass: HomeAssistant, entry: OpenStreetMapConfigEntry
-# ) -> bool:
-#     """Unload a config entry."""
-#     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-
-
-async def async_handle_search(hass: HomeAssistant, call: ServiceCall) -> dict[str, str]:
-    """Handle a service call to search for an address or coordinates with OpenStreetMap.
-
-    Fetches results based on the query from the service call and updates the last search state in Home Assistant.
-
-    Args:
-        hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
-
-    Returns:
-        dict[str, str]: A dictionary containing the search results if successful, or an error message.
-
-    """
-    query = call.data.get("query", "")
-    if not query:
-        error_message = {"error": "Query is missing or empty"}
-        hass.states.async_set(
-            f"{DOMAIN}.last_search", f"Error: {error_message['error']}"
-        )
-        return error_message
-
-    results = search_address(query)
-
-    # fire event with error or full result
-    if "error" in results:
-        hass.states.async_set(f"{DOMAIN}.last_search", f"Error: {results['error']}")
-        hass.bus.async_fire(f"{DOMAIN}_event", {"error": results["error"]})
-    else:
-        hass.bus.async_fire(
-            f"{DOMAIN}_event", {"type": "search", "query": query, "results": results}
-        )
-
-    return results
-
-
-async def async_handle_get_coordinates(
-    hass: HomeAssistant, call: ServiceCall
-) -> dict[str, str]:
-    """Handle the service call for extracting coordinates from JSON.
-
-    Args:
-        hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
-
-    Returns:
-        dict[str, str]: A dictionary containing the search results if json_data, or an error message.
-
-    """
-    json_data = call.data.get("json_data")
-    if not json_data:
-        _LOGGER.error("No JSON data provided")
-        return {"error": "No JSON data provided"}
-
-    return get_Coordinates(json_data)
-
-
-# Service handler for getting coordinates from an address
-async def async_handle_get_address_coordinates(
-    hass: HomeAssistant, call: ServiceCall
-) -> dict[str, str]:
-    """Handle the service call to get coordinates from an address query.
-
-    Args:
-        hass (HomeAssistant): The Home Assistant instance.
-        call (ServiceCall): The service call object containing the data payload.
-
-    Returns:
-        dict[str, str]: A dictionary containing the search results if json_data, or an error message.
-
-    """
-    query = call.data.get("query")
+    query = msg.get("query")
     if not query:
         _LOGGER.error("No query provided")
-        return {"error": "No query provided"}
+        return
 
-    return get_address_coordinates(query)
+    coordinates = get_address_coordinates(query)
+    _LOGGER.info("Coordinates fetched in init 269")
+    if not coordinates:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, "Coordinates not found"
+        )
+        return
+
+    hass.config_entries.async_update_entry(
+        config, data={**config.data, "coordinates": coordinates}
+    )
+
+    connection.send_result(msg["id"], config)
 
 
-CACHED_PROPERTIES_WITH_ATTR_ = {"location"}
+# TODO uncomment this code and fix the todos. Note! Need to uncomment the imports as well # pylint: disable=fixme
+# TODO Update entry annotation # pylint: disable=fixme
+# async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+#     """Set up OpenStreetMap from a config entry."""
 
-
-class OSMEntity(Entity, cached_properties=CACHED_PROPERTIES_WITH_ATTR_):
-    """Implementation of an OSM sensor."""
-
-    def __init__(self, hass: HomeAssistant) -> None:
-        """Initialize the shopping list."""
-        self.hass = hass
-
-    async def async_search_event(self, msg: str) -> str:
-        """Search with keywords."""
-        if not msg:
-            return "Query is missing or empty"
-        return search_address(msg)
+#     # TODO 1. Create API instance # pylint: disable=fixme
+#     # TODO 2. Validate the API connection (and authentication) # pylint: disable=fixme
+#     # TODO 3. Store an API object for your platforms to access # pylint: disable=fixme
+#     # entry.runtime_data = MyAPI(...)
