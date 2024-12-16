@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import requests
 
-from homeassistant.components.open_street_map import (
+from homeassistant.components.open_street_map.search import (
     get_address_coordinates,
     search_address,
 )
