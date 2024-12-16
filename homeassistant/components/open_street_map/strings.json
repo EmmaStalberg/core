@@ -1,0 +1,47 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Device is already configured"
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unexpected error"
+    },
+    "step": {
+      "user": {
+        "title": "Set up OpenStreetMap",
+        "description": "Configure the OpenStreetMap integration."
+      }
+    }
+  },
+  "entity_component": {
+    "_": {
+      "name": "OpenStreetMap",
+      "state": {
+        "default": "No data available"
+      },
+      "state_attributes": {
+        "coordinates": {
+          "name": "Coordinates"
+        },
+        "query": {
+          "name": "Query"
+        }
+      }
+    }
+  },
+  "services": {
+    "get_address_coordinates": {
+      "name": "Get Address Coordinates",
+      "description": "Fetch coordinates for a given address query.",
+      "fields": {
+        "query": {
+          "name": "Query",
+          "description": "The address or location to search for."
+        }
+      }
+    }
+  },
+  "title": "OpenStreetMap"
+}

@@ -15,7 +15,6 @@ from homeassistant.helpers.typing import ConfigType
 from .const import DOMAIN
 from .search import (
     get_address_coordinates,
-    get_Coordinates,
     # AddressSearchView,
     search_address,  # imports search function from search.py
 )
@@ -174,7 +173,7 @@ async def async_handle_get_coordinates(
         _LOGGER.error("No JSON data provided")
         return {"error": "No JSON data provided"}
 
-    results = get_Coordinates(json_data)
+    results = get_address_coordinates(json_data)
     connection.send_result(msg["id"], {"results": results})
     return None
 

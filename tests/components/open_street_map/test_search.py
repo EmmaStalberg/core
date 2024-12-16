@@ -8,7 +8,6 @@ import requests
 from homeassistant.components.open_street_map.search import (
     get_address_coordinates,
     get_click_query,
-    get_Coordinates,
     search_address,
 )
 
@@ -39,9 +38,15 @@ class TestSearchFunctions(unittest.TestCase):
         mock_get.return_value = type("MockResponse", (object,), mock_response)
         # Call the function and check the result
         result = search_address("Test Address")
+
+        # print("Actual result:", result)
+
         # Use plain assert statements
         assert isinstance(result, list)
         assert "display_name" in result[0]
+        assert "lat" in result[0]
+        assert "lon" in result[0]
+        assert result[0]["lat"] == "57.69168362481461"
 
     @patch("homeassistant.components.open_street_map.search.requests.get")
     def test_search_address_timeout(self, mock_get):
@@ -59,40 +64,6 @@ class TestSearchFunctions(unittest.TestCase):
         result = search_address("Test Address")
         assert result == {"error": "Request failed: Mock failure"}
 
-    def test_get_Coordinates_success(self):
-        """Tests the success of get_coordinates function."""
-        # Simulate valid JSON data with lat and lon
-        # No @patch is needed since we don't mock any API
-        # Instead we write down the lat and lon we want to check
-        sample_json = [
-            {
-                "lat": "57.69168362481461",
-                "lon": "11.95719433068511",
-            }
-        ]
-        result = get_Coordinates(sample_json)
-        # Make sure that the extraction of coordinates are correct
-        assert result == [57.69168362481461, 11.95719433068511]
-
-    def test_get_Coordinates_failure(self):
-        # Simulate empty JSON data
-        """Tests the failure of get_coordinates function."""
-        sample_json = []
-        result = get_Coordinates(sample_json)
-        # Check the error message when no coordinates are found
-        assert result == {"error": "Coordinates could not be extracted"}
-
-        # Simulate invalid coordinate data
-        sample_json = [
-            {
-                "lat": "invalid",
-                "lon": "data",
-            }
-        ]
-        result = get_Coordinates(sample_json)
-        # Check the error for invalid data
-        assert result == {"error": "Coordinates could not be extracted"}
-
     @patch("homeassistant.components.open_street_map.search.search_address")
     def test_get_address_coordinates_success(self, mock_search):
         """Test the success of get_address_coordinates function."""
@@ -104,8 +75,10 @@ class TestSearchFunctions(unittest.TestCase):
             }
         ]
         result = get_address_coordinates("Test Address")
+        print("Actual result get_address_coordinates:", result)
         # Make sure the correct coordinates are returned
-        assert result == [57.69168362481461, 11.95719433068511]
+        assert result["lat"] == 57.69168362481461
+        assert result["lon"] == 11.95719433068511
 
     @patch("homeassistant.components.open_street_map.search.search_address")
     def test_get_address_coordinates_fail(self, mock_search):

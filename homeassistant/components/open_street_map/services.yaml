@@ -11,3 +11,13 @@ get_address_coordinates:
     query:
       description: "The search term (address, coordinates, etc.)."
       example: "Korsvägen 1, Gothenburg"
+
+share_location:
+  description: "Generate a URL for a shared location based on coordinates."
+  fields:
+    latitude:
+      description: "Latitude of the location."
+      example: 59.3293
+    longitude:
+      description: "Longitude of the location."
+      example: 18.0686

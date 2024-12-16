@@ -35,9 +35,10 @@ async def test_handle_search(hass: HomeAssistant) -> None:
     """Test the handle_search function."""
 
     assert True
+    
 
 
 async def test_handle_get_address_coordinates(hass: HomeAssistant) -> None:
-    """Test the handle_get_address_coordinates funciton."""
+    """Test the handle_get_address_coordinates function."""
 
     assert True
