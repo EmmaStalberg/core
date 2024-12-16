@@ -146,7 +146,7 @@ class OpenStreetMapEntity(Entity):
 
     @property
     def _unique_id(self) -> str:
-        return f"{DOMAIN}_{self._query}"
+        return "osm_search_entity"
 
     @property
     def state(self) -> str | None:
