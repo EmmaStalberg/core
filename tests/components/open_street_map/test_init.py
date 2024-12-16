@@ -3,13 +3,6 @@
 from datetime import timedelta
 import logging
 
-import pytest
-
-from homeassistant.components import websocket_api
-from homeassistant.components.open_street_map.search import (
-    get_address_coordinates,
-    search_address,
-)
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 
@@ -45,6 +38,6 @@ async def test_handle_search(hass: HomeAssistant) -> None:
     
 
 async def test_handle_get_address_coordinates(hass: HomeAssistant) -> None:
-    """Test the handle_get_address_coordinates funciton."""
+    """Test the handle_get_address_coordinates function."""
 
     assert True
