@@ -1,8 +1,23 @@
-get_address_coordinates:
-  target:
-    entity:
-      domain: open_street_map
+search:
+  description: "Search for an address or place using OpenStreetMap."
   fields:
     query:
-      required: true
-      example: "Gibraltargatan 12"
+      description: "The search term (address, coordinates, etc.)."
+      example: "Korsvägen 1, Gothenburg"
+
+get_address_coordinates:
+  description: "Get the latitude and longitude for a given address or place."
+  fields:
+    query:
+      description: "The search term (address, coordinates, etc.)."
+      example: "Korsvägen 1, Gothenburg"
+
+share_location:
+  description: "Generate a URL for a shared location based on coordinates."
+  fields:
+    latitude:
+      description: "Latitude of the location."
+      example: 59.3293
+    longitude:
+      description: "Longitude of the location."
+      example: 18.0686
