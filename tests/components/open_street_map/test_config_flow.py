@@ -1,5 +1,3 @@
-"""Tests for config_flow.py."""
-
 """Tests for the Open street maps config flow."""
 
 import unittest
@@ -14,7 +12,7 @@ class TestSearchFunctions(unittest.TestCase):
     """Class for tests regarding the config_flow."""
 
     async def test_full_user_flow(
-        hass: HomeAssistant,
+            hass: HomeAssistant,
     ) -> None:
         """Test the full user configuration flow."""
         result = await hass.config_entries.flow.async_init(
