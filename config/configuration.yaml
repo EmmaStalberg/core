@@ -4,7 +4,6 @@ default_config:
 # Load frontend themes from the themes folder
 frontend:
   themes: !include_dir_merge_named themes
-  development_repo: /workspaces/frontend/
 
 automation: !include automations.yaml
 script: !include scripts.yaml
@@ -16,13 +15,15 @@ logger:
     homeassistant.components.cloud: debug
 
 # panel for openstreetmap
-panel_custom:
-  - name: OpenStreetMap-panel
-    # url_path needs to be unique for each panel_custom config
-    url_path: openstreetmap
-    sidebar_title: OpenStreetMap
-    sidebar_icon: mdi:map
-    module_url: /local/openStreetMap-panel.js
-    config:
-      # Data you want to make available to panel
-      hello: world
+# panel_custom:
+#   - name: OpenStreetMap-panel
+#     # url_path needs to be unique for each panel_custom config
+#     url_path: openstreetmap
+#     sidebar_title: OpenStreetMap
+#     sidebar_icon: mdi:map
+#     module_url: /local/openStreetMap-panel.js
+#     config:
+#       # Data you want to make available to panel
+#       hello: world
+
+# open_street_map: // causes error does not support yaml setup

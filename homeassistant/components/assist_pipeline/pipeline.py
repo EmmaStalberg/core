@@ -77,7 +77,7 @@ from .error import (
 )
 from .vad import AudioBuffer, VoiceActivityTimeout, VoiceCommandSegmenter, chunk_samples
 
-LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 STORAGE_KEY = f"{DOMAIN}.pipelines"
 STORAGE_VERSION = 1
@@ -172,7 +172,7 @@ def _resolve_conversation(hass, conversation_engine_id, pipeline_language):
     else:
         conversation_language = "en"
 
-    return conversation_engine_id, conversation_language, initial_pipeline_language
+    return conversation_engine_id, conversation_language
 
 
 def _resolve_stt(hass, stt_engine_id, pipeline_language):
@@ -556,7 +556,7 @@ class PipelineRun:
     start_stage: PipelineStage
     end_stage: PipelineStage
     event_callback: PipelineEventCallback
-    language: Optional[str] = None  # type: ignore[assignment]
+    language: str | None = None  # type: ignore[assignment]
     runner_data: Any | None = None
     intent_agent: str | None = None
     tts_audio_output: str | dict[str, Any] | None = None

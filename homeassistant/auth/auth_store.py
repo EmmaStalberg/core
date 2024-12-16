@@ -358,9 +358,9 @@ class AuthStore:
         self._build_token_id_to_user_id()
         self._async_schedule_save(INITIAL_LOAD_SAVE_DELAY)
 
-    def create_objects_explicitly(
-        self, data: dict[str, list[dict[str, Any]]], groups: dict[str, models.Group]
-    ) -> tuple[dict[str, models.Group], bool, bool, bool, str | None]:
+    def create_objects_explicitly(self,
+                                  data: dict[str, list[dict[str, Any]]],
+                                  groups: dict[str, models.Group]) -> tuple[dict[str, models.Group], bool, bool, bool, str | None]:
         has_admin_group = False
         has_user_group = False
         has_read_only_group = False
@@ -414,14 +414,12 @@ class AuthStore:
             group_without_policy,
         )
 
-    def collect_user_group(
-        self,
-        data: dict[str, list[dict[str, Any]]],
-        perm_lookup: PermissionLookup,
-        users: dict[str, models.User],
-        groups: dict[str, models.Group],
-        group_without_policy,
-    ) -> dict[str, models.User]:
+    def collect_user_group(self,
+                           data: dict[str, list[dict[str, Any]]],
+                           perm_lookup: PermissionLookup,
+                           users: dict[str, models.User],
+                           groups: dict[str, models.Group],
+                           group_without_policy) -> dict[str, models.User]:
         migrate_users_to_admin_group = not groups and group_without_policy is None
 
         for user_dict in data["users"]:
@@ -446,17 +444,15 @@ class AuthStore:
             )
         return users
 
-    def refresh_tokens(
-        self,
-        data: dict[str, list[dict[str, Any]]],
-        users: dict[str, models.User],
-        credentials: dict[str, models.Credentials],
-    ) -> dict[str, models.User]:
+    def refresh_tokens(self,
+                       data: dict[str, list[dict[str, Any]]],
+                       users: dict[str, models.User],
+                       credentials: dict[str, models.Credentials]) -> dict[str, models.User]:
         for rt_dict in data["refresh_tokens"]:
             if "jwt_key" not in rt_dict:
                 continue
 
-            created_at = dt_util.parse_datetime(rt_dict["created_at"])
+            created_at = dt_util.parse_datetime(str(rt_dict["created_at"]))
             if created_at is None:
                 getLogger(__name__).error(
                     (
@@ -474,7 +470,7 @@ class AuthStore:
                     else models.TOKEN_TYPE_NORMAL
                 )
 
-            last_used_at = dt_util.parse_datetime(rt_dict.get("last_used_at", ""))
+            last_used_at = dt_util.parse_datetime(str(rt_dict.get("last_used_at", "")))
 
             token = models.RefreshToken(
                 id=rt_dict["id"],

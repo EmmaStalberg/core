@@ -79,6 +79,7 @@ class CommandLineAuthProvider(AuthProvider):
         if self.config[CONF_META]:
             self._process_meta(username, process.stdout)
 
+
 async def _run_subprocess(self, env: dict) -> asyncio.subprocess.Process:
     """Run the subprocess and handle OSError."""
     try:
@@ -91,8 +92,9 @@ async def _run_subprocess(self, env: dict) -> asyncio.subprocess.Process:
         )
         return process
     except OSError as err:
-        _LOGGER.error("Error while authenticating %r: %s", env['username'], err)
+        _LOGGER.error("Error while authenticating %r: %s", env["username"], err)
         raise InvalidAuthError from err
+
 
 def _process_meta(self, username: str, stdout: bytes) -> None:
     """Process the meta information from the subprocess."""
@@ -110,7 +112,6 @@ def _process_meta(self, username: str, stdout: bytes) -> None:
         if key in self.ALLOWED_META_KEYS:
             meta[key] = value
     self._user_meta[username] = meta
-
 
     async def async_get_or_create_credentials(
         self, flow_result: Mapping[str, str]
