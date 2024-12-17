@@ -1,0 +1,10 @@
+{
+  "domain": "open_street_map",
+  "name": "OpenStreetMap",
+  "codeowners": ["@EmmaStalberg"],
+  "dependencies": ["http"],
+  "documentation": "https://www.home-assistant.io/integrations/open_street_map",
+  "integration_type": "entity",
+  "iot_class": "cloud_polling",
+  "quality_scale": "internal"
+}

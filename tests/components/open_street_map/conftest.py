@@ -13,3 +13,4 @@ def mock_setup_entry() -> Generator[AsyncMock]:
         "config.custom_components.open_street_map.async_setup_entry", return_value=True
     ) as mock_setup_entry:
         yield mock_setup_entry
+"""Config for tests."""

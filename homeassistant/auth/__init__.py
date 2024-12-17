@@ -521,6 +521,21 @@ class AuthManager:
                     # long_lived_access_token type of refresh token
                     raise ValueError(f"{client_name} already exists")
 
+    def client_name_valid_long_lived_access_tokens(
+        self,
+        token_type: str | None = None,
+        client_name: str | None = None,
+    ) -> None:
+        if token_type == models.TOKEN_TYPE_LONG_LIVED_ACCESS_TOKEN:
+            for token in self._store.async_get_refresh_tokens():
+                if (
+                    token.client_name == client_name
+                    and token.token_type == models.TOKEN_TYPE_LONG_LIVED_ACCESS_TOKEN
+                ):
+                    # Each client_name can only have one
+                    # long_lived_access_token type of refresh token
+                    raise ValueError(f"{client_name} already exists")
+
     @callback
     def async_get_refresh_token(self, token_id: str) -> models.RefreshToken | None:
         """Get refresh token by id."""
