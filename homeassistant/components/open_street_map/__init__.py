@@ -46,6 +46,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     hass.http.register_view(OpenStreetMapView(component))
 
+    hass.data[DOMAIN] = {}
+    hass.states.async_set(f"{DOMAIN}.integration", "loaded")
+
     frontend.async_register_built_in_panel(
         hass,
         component_name="open-street-map",
@@ -54,6 +57,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
 
     websocket_api.async_register_command(hass, async_handle_get_address_coordinates)
+
+    # hass.services.async_register(
+    #     DOMAIN,
+    #     GET_ADDRESS_COORDINATES_SERVICE,
+    #     async_handle_get_address_coordinates,
+    #     GET_ADDRESS_COORDINATES_SCHEMA,
+    #     supports_response=SupportsResponse.ONLY,
+    # )
 
     component.async_register_entity_service(
         GET_ADDRESS_COORDINATES_SERVICE,
@@ -122,6 +133,9 @@ class OpenStreetMapEntity(Entity):
         if coordinates:
             self._latestSearchedCoordinates = coordinates
             self._state = f"{coordinates[0]},{coordinates[1]}"
+
+        # Trigger a state update
+        self.async_write_ha_state()
 
     async def fetch_coordinates(self, query: str) -> list[float] | None:
         """Fetch coordinates for the given query using the OpenStreetMap API."""
@@ -199,14 +213,3 @@ async def async_handle_get_address_coordinates(
     )
 
     connection.send_result(msg["id"], config)
-
-
-# TODO uncomment this code and fix the todos. Note! Need to uncomment the imports as well # pylint: disable=fixme
-# TODO Update entry annotation # pylint: disable=fixme
-# async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-#     """Set up OpenStreetMap from a config entry."""
-
-#     # TODO 1. Create API instance # pylint: disable=fixme
-#     # TODO 2. Validate the API connection (and authentication) # pylint: disable=fixme
-#     # TODO 3. Store an API object for your platforms to access # pylint: disable=fixme
-#     # entry.runtime_data = MyAPI(...)
