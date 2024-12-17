@@ -2,8 +2,9 @@
 
 from datetime import timedelta
 import logging
+from unittest.mock import MagicMock
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.setup import async_setup_component
 
 DOMAIN = "open_street_map"
@@ -31,13 +32,20 @@ async def test_setup(hass: HomeAssistant) -> None:
     assert "get_address_coordinates" in services_registered
 
 
-async def test_handle_search(hass: HomeAssistant) -> None:
-    """Test the handle_search function."""
+async def test_service_call(hass: HomeAssistant) -> None:
+    """Test that services are called as expected, and that sent data arrives."""
 
-    assert True
-    
+    service_mock = MagicMock()
+    hass.services.async_register(DOMAIN, "search", service_mock)
 
-async def test_handle_get_address_coordinates(hass: HomeAssistant) -> None:
-    """Test the handle_get_address_coordinates function."""
+    await hass.services.async_call(DOMAIN, "search", {"query": "test query"}, blocking=True)
 
-    assert True
+    service_mock.assert_called_once()
+
+    service_call = service_mock.call_args[0][0]
+    assert isinstance(service_call, ServiceCall)
+    assert service_call.service == "search"
+    assert service_call.data == {"query": "test query"}
+
+
+## TODO tests for handlers. These are not implemented as we do not know why it doesn't work
